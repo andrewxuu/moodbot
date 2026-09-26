@@ -3,6 +3,8 @@ import { searchTrack } from './spotify/api'
 import { FILTERS, firstArtist, libraryProfile, passesLanguage, songKey } from './lib/filters'
 import { getArtistTopTracks, getSimilarArtists, getSimilarTracks, getTagTopTracks, isLastfmConfigured } from './services/lastfm'
 import { discoveryTags, scoreSongs } from './lib/moodTags'
+import { checkGenres, genreTag, matchGenre } from './lib/genreMatch'
+import { loadGenrePrefs } from './lib/genrePrefs'
 
 const moodWords = {
   Calm: ['calm', 'chill', 'relax', 'tired', 'long day', 'peace', 'slow'],
@@ -29,15 +31,19 @@ export function detectMood(text) {
 
 const shuffle = (list) => [...list].sort(() => Math.random() - 0.5)
 
-export function pickSongs(pool, mood, mode, exclude = []) {
+const notAvoided = (prefs) => (song) => !(song.genres?.length && matchGenre(song.genres, prefs.avoided))
+const likedFirst = (list, isLiked) => [...list.filter(isLiked), ...list.filter((x) => !isLiked(x))]
+
+export function pickSongs(pool, mood, mode, exclude = [], prefs = loadGenrePrefs()) {
   const lifting = mode === 'Lift my mood' && mood
   const target = lifting ? liftTo[mood] : mood
   const keywords = target ? moodGenres[target] : []
   const genreOf = (song) => song.genres?.find((g) => keywords.some((k) => g.includes(k)))
 
-  const available = pool.filter((s) => !exclude.includes(s.id))
-  const matches = shuffle(available.filter(genreOf))
-  const rest = shuffle(available.filter((s) => !genreOf(s)))
+  const available = pool.filter((s) => !exclude.includes(s.id)).filter(notAvoided(prefs))
+  const liked = (s) => Boolean(s.genres?.length && matchGenre(s.genres, prefs.liked))
+  const matches = likedFirst(shuffle(available.filter(genreOf)), liked)
+  const rest = likedFirst(shuffle(available.filter((s) => !genreOf(s))), liked)
   const songs = [...matches, ...rest].slice(0, 3)
   const genre = matches.length ? genreOf(matches[0]) : null
 
@@ -107,8 +113,11 @@ async function rankByTags(list, mood, n) {
     .map((x) => x.song)
 }
 
-async function tagCandidates(mood, knownKeys, profile) {
-  const tags = shuffle(discoveryTags(mood)).slice(0, TAGS.discoveryTags)
+async function tagCandidates(mood, knownKeys, profile, likedGenres = []) {
+  const moodTags = shuffle(discoveryTags(mood))
+  const tags = likedGenres.length
+    ? [...moodTags.slice(0, TAGS.discoveryTags - 1), genreTag(shuffle(likedGenres)[0])]
+    : moodTags.slice(0, TAGS.discoveryTags)
   const pageFor = () => String(1 + Math.floor(Math.random() * TAGS.discoveryPages))
   const lists = await Promise.allSettled(tags.map((tag) => getTagTopTracks(tag, 50, pageFor())))
   const out = new Map()
@@ -246,6 +255,23 @@ function averageOf(list) {
 }
 
 export async function getPicks({ top, library, pool, mood, mode, exclude = [], alreadyShown = [], feedback = { liked: [], disliked: [] } }) {
+  const prefs = loadGenrePrefs()
+  const allowed = notAvoided(prefs)
+  top = top.filter(allowed)
+  library = library.filter(allowed)
+  pool = pool.filter(allowed)
+  const likedHits = new Map()
+  const withGenres = async (list, n) => {
+    const checks = await checkGenres(list, prefs)
+    const kept = list.filter((_, i) => !checks[i].avoided)
+    list.forEach((s, i) => checks[i].liked && likedHits.set(s.id, checks[i].liked))
+    return likedFirst(kept, (s) => likedHits.has(s.id)).slice(0, n)
+  }
+  const genreNote = (songs) => {
+    const hits = [...new Set(songs.map((s) => likedHits.get(s.id)).filter(Boolean))]
+    return hits.length ? ` Leaning toward ${joinWords(hits.map((g) => g.toLowerCase()))}, which you like.` : ''
+  }
+
   const lifting = mode === 'Lift my mood' && Boolean(mood)
   const baseTarget = targetsFor(mood, lifting)
   const hasMood = Object.keys(baseTarget).length > 0
@@ -262,7 +288,7 @@ export async function getPicks({ top, library, pool, mood, mode, exclude = [], a
   const profile = libraryProfile(everything)
 
   if (!topSongs.length && !likedSongs.length) {
-    const familiar = pickSongs(pool, mood, mode, exclude)
+    const familiar = pickSongs(pool, mood, mode, exclude, prefs)
     return { ...familiar, reason: `${familiar.reason} New finds need top tracks or liked songs.` }
   }
 
@@ -296,15 +322,14 @@ export async function getPicks({ top, library, pool, mood, mode, exclude = [], a
   const familiarPool = [...new Map([...topSongs, ...likedSongs, ...upvoted].map((s) => [s.id, s])).values()].filter(
     (s) => !exclude.includes(s.id) && !seedIds.includes(s.id) && notShown(s)
   )
-  const familiarOptions = await pickForMood(familiarPool, 5)
+  const familiarOptions = await withGenres(await pickForMood(familiarPool, 8), 5)
   const familiar = shuffle(familiarOptions)[0]
-  const familiarOnly = (reason) => ({
-    songs: (familiar
-      ? [familiar, ...familiarOptions.filter((s) => s.id !== familiar.id)]
-      : pickSongs(pool, mood, mode, exclude).songs.filter(notShown)
-    ).slice(0, 3),
-    reason,
-  })
+  const familiarOnly = (reason) => {
+    const songs = (
+      familiar ? [familiar, ...familiarOptions.filter((s) => s.id !== familiar.id)] : pickSongs(pool, mood, mode, exclude, prefs).songs.filter(notShown)
+    ).slice(0, 3)
+    return { songs, reason: `${reason}${genreNote(songs)}` }
+  }
 
   if (!isLastfmConfigured()) {
     return familiarOnly('Add your Last.fm API key to .env to get new finds. These are from your top tracks and liked songs.')
@@ -314,18 +339,22 @@ export async function getPicks({ top, library, pool, mood, mode, exclude = [], a
     const penalties = feedback.disliked.length ? await dislikePenalties(feedback.disliked) : new Map()
     const [ranked, tagged] = await Promise.all([
       findCandidates(seeds, knownKeys, profile, { boosted: new Set(fromFeedback.map((s) => s.id)), penalties }),
-      useTags ? tagCandidates(tagMood, knownKeys, profile) : [],
+      useTags ? tagCandidates(tagMood, knownKeys, profile, prefs.liked) : [],
     ])
     const similar = shuffle(ranked.slice(0, 16)).slice(0, tagged.length ? 10 - TAGS.searched : 10)
     const similarKeys = new Set(similar.map((c) => songKey(c.artist, c.title)))
     const fromTags = tagged.filter((c) => !similarKeys.has(songKey(c.artist, c.title))).slice(0, TAGS.searched)
     const toResolve = [...similar, ...fromTags]
-    const found = await resolveOnSpotify(toResolve, knownIds, exclude)
+    const resolved = await resolveOnSpotify(toResolve, knownIds, exclude)
+    const checks = await checkGenres(resolved.map((x) => x.song), prefs)
+    const found = resolved.filter((_, i) => !checks[i].avoided)
+    resolved.forEach((x, i) => checks[i].liked && likedHits.set(x.song.id, checks[i].liked))
     console.debug('[moodbot] Last.fm picks', {
       candidates: ranked.length,
       fromTags: fromTags.length,
       searched: toResolve.length,
-      onSpotify: found.length,
+      onSpotify: resolved.length,
+      afterGenres: found.length,
       feedbackSeeds: fromFeedback.length,
       penalized: penalties.size,
     })
@@ -333,6 +362,7 @@ export async function getPicks({ top, library, pool, mood, mode, exclude = [], a
 
     let ordered = useTags ? await byTags(found, tagMood).catch(() => null) : null
     if (!ordered) ordered = hasMood ? await byMood(found, target) : [...found].sort((a, b) => b.score - a.score)
+    ordered = likedFirst(ordered, (x) => likedHits.has(x.song.id))
     const chosen = chooseNew(ordered, 2)
     const newSongs = chosen.map((x) => ({ ...x.song, isNew: true }))
 
@@ -359,7 +389,7 @@ export async function getPicks({ top, library, pool, mood, mode, exclude = [], a
 
     return {
       songs,
-      reason: `${count} new ${count === 1 ? 'find' : 'finds'} ${source}${how}.${tagLine}${knownLine}${note}`,
+      reason: `${count} new ${count === 1 ? 'find' : 'finds'} ${source}${how}.${tagLine}${knownLine}${genreNote(songs)}${note}`,
     }
   } catch {
     return familiarOnly('Couldn’t find new songs this time, so these are from your top tracks and liked songs.')
