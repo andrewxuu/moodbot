@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Music, RefreshCw, Send, ThumbsDown, ThumbsUp } from 'lucide-react'
+import { Music, RefreshCw, Send } from 'lucide-react'
 import ChatMessage from '../components/ChatMessage'
 import Chip from '../components/Chip'
 import IconButton from '../components/IconButton'
@@ -9,6 +9,7 @@ import SavedPanel from '../components/SavedPanel'
 import { useSpotify } from '../spotify/useSpotify'
 import { detectMood, getPicks, pickSongs } from '../picks'
 import { songs as sampleSongs } from '../data'
+import { moodKey, useFeedback } from '../feedback'
 
 const moods = ['Calm', 'Hype', 'Focus', 'Sad', 'Happy']
 const SAMPLE_REASON = 'Sample picks. Connect Spotify to get picks from your own listening.'
@@ -16,14 +17,15 @@ const greeting = { id: 0, from: 'bot', text: "Hi! How are you feeling? Tell me a
 
 export default function ChatPage({ savedSongs, isSaved, onSave, onNavigate }) {
   const { listening, liked } = useSpotify()
+  const { forMood, ratingOf, rate } = useFeedback()
   const isSample = listening.length === 0
   const pool = isSample ? sampleSongs : listening
 
   const [messages, setMessages] = useState([greeting])
   const [draft, setDraft] = useState('')
   const [mode, setMode] = useState('Match my mood')
-  const [ratings, setRatings] = useState({})
   const nextId = useRef(1)
+  const shown = useRef({})
   const endRef = useRef(null)
 
   useEffect(() => {
@@ -34,9 +36,25 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onNavigate }) {
     const id = nextId.current++
     setMessages((m) => [...m, ...before, { id, from: 'bot', pending: true }])
 
+    const key = moodKey(mood)
+    const alreadyShown = [...(shown.current[key]?.values() ?? [])]
+    const feedback = forMood(mood)
+    const skip = [...exclude, ...alreadyShown.map((s) => s.id), ...feedback.disliked.map((s) => s.id)]
     const picks = isSample
-      ? { ...pickSongs(sampleSongs, mood, mode, exclude), reason: SAMPLE_REASON }
-      : await getPicks({ top: listening.filter((s) => s.top), library: liked, pool: listening, mood, mode, exclude })
+      ? { ...pickSongs(sampleSongs, mood, mode, skip), reason: SAMPLE_REASON }
+      : await getPicks({
+          top: listening.filter((s) => s.top),
+          library: liked,
+          pool: listening,
+          mood,
+          mode,
+          exclude: skip,
+          alreadyShown,
+          feedback,
+        })
+
+    shown.current[key] ??= new Map()
+    picks.songs.forEach((s) => shown.current[key].set(s.id, s))
 
     setMessages((m) => m.map((msg) => (msg.id === id ? { id, from: 'bot', mood, ...picks } : msg)))
   }
@@ -49,6 +67,13 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onNavigate }) {
   }
 
   const moreLikeThis = (msg) => respond(msg.mood, msg.songs.map((s) => s.id))
+
+  const saveFromChat = (msg, song) => {
+    if (!isSaved(song.id)) rate(msg.mood, song, 'up')
+    onSave(song)
+  }
+
+  const downNote = (msg) => `Won’t be picked again${msg.mood ? ` for ${msg.mood.toLowerCase()}` : ''}`
 
   const intro = (msg) => {
     const kind = msg.mood ? `${msg.mood.toLowerCase()} ` : ''
@@ -83,7 +108,7 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onNavigate }) {
             if (!msg.songs.length) {
               return (
                 <ChatMessage key={msg.id}>
-                  I couldn’t find new songs in your listening history. Try syncing Spotify again later.
+                  I’ve run out of songs I haven’t shown you for this mood. Refresh the page to start fresh, or try another mood.
                 </ChatMessage>
               )
             }
@@ -91,7 +116,16 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onNavigate }) {
               <ChatMessage key={msg.id} width={540} fill>
                 <p>{intro(msg)}</p>
                 {msg.songs.map((song) => (
-                  <SongRow key={song.id} song={song} slot={`chat-${msg.id}`} saved={isSaved(song.id)} onSave={onSave} />
+                  <SongRow
+                    key={song.id}
+                    song={song}
+                    slot={`chat-${msg.id}`}
+                    saved={isSaved(song.id)}
+                    onSave={(s) => saveFromChat(msg, s)}
+                    rating={ratingOf(msg.mood, song.id)}
+                    onRate={(value) => rate(msg.mood, song, value)}
+                    downNote={downNote(msg)}
+                  />
                 ))}
                 <div className="mt-1 flex flex-col gap-2.5">
                   <p className="flex items-center gap-1.5 text-[13px] text-muted">
@@ -99,20 +133,6 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onNavigate }) {
                     {msg.reason}
                   </p>
                   <div className="flex gap-2">
-                    <IconButton
-                      icon={ThumbsUp}
-                      label="Good picks"
-                      size={40}
-                      active={ratings[msg.id] === 'up'}
-                      onClick={() => setRatings((r) => ({ ...r, [msg.id]: 'up' }))}
-                    />
-                    <IconButton
-                      icon={ThumbsDown}
-                      label="Not for me"
-                      size={40}
-                      active={ratings[msg.id] === 'down'}
-                      onClick={() => setRatings((r) => ({ ...r, [msg.id]: 'down' }))}
-                    />
                     <button
                       type="button"
                       onClick={() => moreLikeThis(msg)}
