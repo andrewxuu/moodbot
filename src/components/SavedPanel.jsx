@@ -4,7 +4,8 @@ import SongRow from './SongRow'
 
 export default function SavedPanel({ songs, onSeeAll }) {
   const [query, setQuery] = useState('')
-  const shown = songs.filter((s) => s.title.toLowerCase().includes(query.toLowerCase())).slice(0, 6)
+  const q = query.toLowerCase()
+  const shown = songs.filter((s) => `${s.title} ${s.artist}`.toLowerCase().includes(q)).slice(0, 6)
 
   return (
     <aside className="flex h-full w-[360px] shrink-0 flex-col gap-4 border-l border-line bg-white px-6 py-8">
@@ -25,11 +26,17 @@ export default function SavedPanel({ songs, onSeeAll }) {
         />
       </label>
 
-      <div className="flex flex-col gap-2">
-        {shown.map((song) => (
-          <SongRow key={song.id} song={song} showHeart={false} />
-        ))}
-      </div>
+      {shown.length ? (
+        <div className="flex flex-col gap-2">
+          {shown.map((song) => (
+            <SongRow key={song.id} song={song} showHeart={false} />
+          ))}
+        </div>
+      ) : (
+        <p className="text-[13px] text-muted">
+          {songs.length ? 'No matches.' : 'Tap the heart on a song to save it here.'}
+        </p>
+      )}
     </aside>
   )
 }

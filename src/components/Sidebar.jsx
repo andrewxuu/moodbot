@@ -1,4 +1,6 @@
 import { Heart, List, MessageCircle, Music, Smile } from 'lucide-react'
+import SpotifyStatus from './SpotifyStatus'
+import { useSpotify } from '../spotify/useSpotify'
 
 const links = [
   { id: 'chat', label: 'Chat', icon: MessageCircle },
@@ -8,6 +10,9 @@ const links = [
 ]
 
 export default function Sidebar({ page, onNavigate }) {
+  const { profile } = useSpotify()
+  const name = profile?.name ?? 'Guest'
+
   return (
     <aside className="flex h-full w-[248px] shrink-0 flex-col gap-7 border-r border-line bg-white px-[18px] py-7">
       <div className="flex items-center gap-2.5">
@@ -39,15 +44,18 @@ export default function Sidebar({ page, onNavigate }) {
 
       <div className="flex-1" />
 
-      <div className="inline-flex h-8 items-center gap-2 self-start rounded-full border border-line px-3 text-[13px] text-muted">
-        <Music size={14} />
-        Spotify connected
-      </div>
+      <SpotifyStatus />
 
       <button type="button" className="flex items-center gap-2.5 text-left">
-        <div className="size-9 rounded-full bg-teal-soft" />
-        <div>
-          <p className="text-sm font-semibold">[Your name]</p>
+        {profile?.image ? (
+          <img src={profile.image} alt="" className="size-9 shrink-0 rounded-full object-cover" />
+        ) : (
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-teal-soft text-sm font-semibold text-teal">
+            {name[0].toUpperCase()}
+          </div>
+        )}
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold">{name}</p>
           <p className="mt-1 text-[13px] text-muted">Settings</p>
         </div>
       </button>

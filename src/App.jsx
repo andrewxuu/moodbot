@@ -1,25 +1,64 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import Sidebar from './components/Sidebar'
+import CallbackPage from './pages/CallbackPage'
 import ChatPage from './pages/ChatPage'
 import MoodPage from './pages/MoodPage'
 import SavedSongsPage from './pages/SavedSongsPage'
 import PlaylistsPage from './pages/PlaylistsPage'
+import { SpotifyProvider, useSpotify } from './spotify/useSpotify'
+
+const SAVED_KEY = 'moodbot:saved-songs'
+
+const loadSaved = () => {
+  try {
+    return JSON.parse(localStorage.getItem(SAVED_KEY)) ?? []
+  } catch {
+    return []
+  }
+}
 
 export default function App() {
+  const [path, setPath] = useState(window.location.pathname)
+  const finishLogin = useCallback(() => setPath('/'), [])
+
+  if (path === '/callback') return <CallbackPage onDone={finishLogin} />
+
+  return (
+    <SpotifyProvider>
+      <Moodbot />
+    </SpotifyProvider>
+  )
+}
+
+function Moodbot() {
+  const { liked } = useSpotify()
   const [page, setPage] = useState('chat')
-  const [liked, setLiked] = useState(new Set())
+  const [chatSaved, setChatSaved] = useState(loadSaved)
 
-  const toggleLike = (id) =>
-    setLiked((prev) => {
-      const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
-      return next
-    })
+  useEffect(() => {
+    localStorage.setItem(SAVED_KEY, JSON.stringify(chatSaved))
+  }, [chatSaved])
 
+  const likedIds = useMemo(() => new Set(liked.map((s) => s.id)), [liked])
+  const savedSongs = useMemo(
+    () => [...chatSaved, ...liked.filter((s) => !chatSaved.some((c) => c.id === s.id))],
+    [chatSaved, liked]
+  )
+
+  const isSaved = (id) => likedIds.has(id) || chatSaved.some((s) => s.id === id)
+
+  const toggleSave = (song) => {
+    if (likedIds.has(song.id)) return
+    setChatSaved((prev) =>
+      prev.some((s) => s.id === song.id) ? prev.filter((s) => s.id !== song.id) : [{ ...song, source: 'chat' }, ...prev]
+    )
+  }
+
+  const shared = { savedSongs, isSaved, onSave: toggleSave }
   const pages = {
-    chat: <ChatPage liked={liked} onLike={toggleLike} onNavigate={setPage} />,
+    chat: <ChatPage {...shared} onNavigate={setPage} />,
     mood: <MoodPage />,
-    saved: <SavedSongsPage liked={liked} onLike={toggleLike} />,
+    saved: <SavedSongsPage {...shared} />,
     playlists: <PlaylistsPage />,
   }
 
