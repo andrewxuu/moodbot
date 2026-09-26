@@ -7,5 +7,17 @@ export default defineConfig({
     host: '127.0.0.1',
     port: 5173,
     strictPort: true,
+    proxy: {
+      '/lastfm': {
+        target: 'https://ws.audioscrobbler.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/lastfm/, ''),
+      },
+      '/reccobeats': {
+        target: 'https://api.reccobeats.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/reccobeats/, ''),
+      },
+    },
   },
 })

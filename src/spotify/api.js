@@ -1,4 +1,5 @@
 import { getAccessToken, logout, ReconnectError } from './auth'
+import { normalize } from '../filters'
 
 const BASE = 'https://api.spotify.com/v1'
 
@@ -84,7 +85,7 @@ export async function getPlaylists(max = 100) {
 
 export async function getListening() {
   const [top, recent, artists] = await Promise.all([
-    request('/me/top/tracks?limit=50&time_range=short_term'),
+    request('/me/top/tracks?limit=50&time_range=medium_term'),
     request('/me/player/recently-played?limit=50'),
     request('/me/top/artists?limit=50&time_range=medium_term'),
   ])
@@ -93,13 +94,34 @@ export async function getListening() {
   const seen = new Set()
   const pool = []
 
+  const topIds = new Set(top.items.map((t) => t.id))
+
   for (const track of [...top.items, ...recent.items.map((i) => i.track)]) {
     if (!track?.id || seen.has(track.id)) continue
     seen.add(track.id)
     const song = toSong(track, 'spotify')
+    song.top = topIds.has(track.id)
     song.genres = song.artistIds.flatMap((id) => genresByArtist[id] ?? [])
     pool.push(song)
   }
   return pool
 }
 
+
+export async function getTracks(ids) {
+  const results = await Promise.allSettled(ids.map((id) => request(`/tracks/${id}`)))
+  return Object.fromEntries(
+    results.flatMap((r, i) => (r.status === 'fulfilled' && r.value ? [[ids[i], toSong(r.value, 'spotify')]] : []))
+  )
+}
+
+export async function searchTrack(title, artist) {
+  const params = new URLSearchParams({ q: `track:${title} artist:${artist}`, type: 'track', limit: '5' })
+  const data = await request(`/search?${params}`)
+  const wantArtist = normalize(artist)
+  const wantTitle = normalize(title).slice(0, 14)
+  const match = (data?.tracks?.items ?? []).find(
+    (t) => t?.id && t.artists.some((a) => normalize(a.name) === wantArtist) && normalize(t.name).startsWith(wantTitle)
+  )
+  return match ? toSong(match, 'spotify') : null
+}

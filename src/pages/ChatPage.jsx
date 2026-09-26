@@ -7,14 +7,15 @@ import SegmentedSwitch from '../components/SegmentedSwitch'
 import SongRow from '../components/SongRow'
 import SavedPanel from '../components/SavedPanel'
 import { useSpotify } from '../spotify/useSpotify'
-import { detectMood, pickSongs } from '../picks'
+import { detectMood, getPicks, pickSongs } from '../picks'
 import { songs as sampleSongs } from '../data'
 
 const moods = ['Calm', 'Hype', 'Focus', 'Sad', 'Happy']
+const SAMPLE_REASON = 'Sample picks. Connect Spotify to get picks from your own listening.'
 const greeting = { id: 0, from: 'bot', text: "Hi! How are you feeling? Tell me and I'll find music for it." }
 
 export default function ChatPage({ savedSongs, isSaved, onSave, onNavigate }) {
-  const { listening } = useSpotify()
+  const { listening, liked } = useSpotify()
   const isSample = listening.length === 0
   const pool = isSample ? sampleSongs : listening
 
@@ -29,30 +30,25 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onNavigate }) {
     endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
   }, [messages])
 
-  const makeReply = (mood, exclude = []) => {
-    const { songs, reason } = pickSongs(pool, mood, mode, exclude)
-    return {
-      id: nextId.current++,
-      from: 'bot',
-      mood,
-      songs,
-      reason: isSample ? 'Sample picks. Connect Spotify to get picks from your own listening.' : reason,
-    }
+  const respond = async (mood, exclude = [], before = []) => {
+    const id = nextId.current++
+    setMessages((m) => [...m, ...before, { id, from: 'bot', pending: true }])
+
+    const picks = isSample
+      ? { ...pickSongs(sampleSongs, mood, mode, exclude), reason: SAMPLE_REASON }
+      : await getPicks({ top: listening.filter((s) => s.top), library: liked, pool: listening, mood, mode, exclude })
+
+    setMessages((m) => m.map((msg) => (msg.id === id ? { id, from: 'bot', mood, ...picks } : msg)))
   }
 
   const send = (text) => {
     const clean = text.trim()
     if (!clean) return
-    const userMessage = { id: nextId.current++, from: 'user', text: clean }
-    const reply = makeReply(detectMood(clean))
-    setMessages((m) => [...m, userMessage, reply])
     setDraft('')
+    respond(detectMood(clean), [], [{ id: nextId.current++, from: 'user', text: clean }])
   }
 
-  const moreLikeThis = (msg) => {
-    const reply = makeReply(msg.mood, msg.songs.map((s) => s.id))
-    setMessages((m) => [...m, reply])
-  }
+  const moreLikeThis = (msg) => respond(msg.mood, msg.songs.map((s) => s.id))
 
   const intro = (msg) => {
     const kind = msg.mood ? `${msg.mood.toLowerCase()} ` : ''
@@ -71,6 +67,13 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onNavigate }) {
               return (
                 <ChatMessage key={msg.id} from="user" width={400}>
                   {msg.text}
+                </ChatMessage>
+              )
+            }
+            if (msg.pending) {
+              return (
+                <ChatMessage key={msg.id}>
+                  <p role="status" className="text-muted">Finding songs…</p>
                 </ChatMessage>
               )
             }

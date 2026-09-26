@@ -53,7 +53,12 @@ export default function SongRow({ song, slot = 'list', saved, onSave, showHeart 
     <div className="flex items-center gap-3">
       {art}
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[15px] font-semibold">{song.title}</p>
+        <div className="flex min-w-0 items-center gap-1.5">
+          <p className="truncate text-[15px] font-semibold">{song.title}</p>
+          {song.isNew && (
+            <span className="shrink-0 rounded-full bg-teal-soft px-1.5 py-0.5 text-[11px] font-semibold text-teal">New</span>
+          )}
+        </div>
         <p className="mt-0.5 truncate text-[13px] text-muted">{song.artist}</p>
       </div>
       {heart}

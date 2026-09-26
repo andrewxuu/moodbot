@@ -53,7 +53,7 @@ function Moodbot() {
   const toggleSave = (song) => {
     if (likedIds.has(song.id)) return
     setChatSaved((prev) =>
-      prev.some((s) => s.id === song.id) ? prev.filter((s) => s.id !== song.id) : [{ ...song, source: 'chat' }, ...prev]
+      prev.some((s) => s.id === song.id) ? prev.filter((s) => s.id !== song.id) : [{ ...song, source: 'chat', isNew: undefined }, ...prev]
     )
   }
 
