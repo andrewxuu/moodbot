@@ -1,8 +1,8 @@
 import { useSpotify } from '../spotify/useSpotify'
-import { daysBetween, sampleCheckIn } from '../data/sampleMoods'
+import { checkInFor, daysBetween } from '../data/sampleMoods'
 import { useState } from 'react'
 import { CircleCheck } from 'lucide-react'
-import { moodBg, moodLabel, scoreMood } from '../lib/moodMonth'
+import { moodBg } from '../lib/moodMonth'
 import { ratingMood, stressLabel, useRatings } from '../ratings'
 
 function greetingFor(hour) {
@@ -153,37 +153,70 @@ function MoodRating() {
 }
 
 function WeekSnapshot() {
+  useRatings()
   const now = new Date()
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const start = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6)
-  const days = daysBetween(start, today).map((date) => ({ date, checkIn: sampleCheckIn(date, today) }))
-  const scores = days.filter((d) => d.checkIn).map((d) => d.checkIn.score)
-  const avg = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : null
-  const avgMood = avg ? scoreMood[Math.round(avg)] : null
+
+  const days = daysBetween(start, today).map((date) => {
+    const checkIn = checkInFor(date, now)
+    return { date, avg: checkIn ? checkIn.rating : null, count: checkIn ? checkIn.count : 0 }
+  })
+
+  const all = days.flatMap((d) => (d.avg === null ? [] : [d]))
+  const weekAvg = all.length ? all.reduce((sum, d) => sum + d.avg, 0) / all.length : null
+
+  const describe = ({ date, avg, count }) => {
+    const day = date.toLocaleDateString('en-US', { weekday: 'long' })
+    if (avg === null) return `${day}: no check-ins`
+    return `${day}: ${avg.toFixed(1)}/10, ${stressLabel(Math.round(avg))}, ${count} check-in${count === 1 ? '' : 's'}`
+  }
 
   return (
-    <Section title="This week" aside={avgMood ? `Avg ${moodLabel(avgMood)} ${avg.toFixed(1)}` : 'No check-ins yet'}>
-      <div className="flex h-[110px] items-end gap-1.5">
-        {days.map(({ date, checkIn }) =>
-          checkIn ? (
-            <span
-              key={date.toISOString()}
-              style={{ height: checkIn.score * 20 }}
-              className={`flex-1 rounded-b-[2px] rounded-t-[4px] ${moodBg[checkIn.mood]}`}
-            />
-          ) : (
-            <span key={date.toISOString()} className="h-5 flex-1 rounded-[4px] border border-dashed border-line" />
-          )
-        )}
-      </div>
-      <div className="flex gap-1.5 text-center text-[11px] text-muted">
-        {days.map(({ date }) => (
-          <span key={date.toISOString()} className="flex-1">
-            {date.toLocaleDateString('en-US', { weekday: 'narrow' })}
-          </span>
-        ))}
-      </div>
-      <p className="text-xs text-muted">Sample data</p>
+    <Section
+      title="This week"
+      aside={weekAvg !== null ? `Avg ${weekAvg.toFixed(1)}/10 · ${stressLabel(Math.round(weekAvg))}` : null}
+    >
+      {all.length ? (
+        <>
+          <div className="flex h-[110px] items-end gap-1.5">
+            {days.map((d) =>
+              d.avg !== null ? (
+                <span
+                  key={d.date.toISOString()}
+                  title={describe(d)}
+                  aria-label={describe(d)}
+                  role="img"
+                  style={{ height: Math.max(8, d.avg * 11) }}
+                  className={`flex-1 rounded-b-[2px] rounded-t-[4px] ${moodBg[ratingMood(Math.round(d.avg))]}`}
+                />
+              ) : (
+                <span
+                  key={d.date.toISOString()}
+                  title={describe(d)}
+                  aria-label={describe(d)}
+                  role="img"
+                  className="h-5 flex-1 rounded-[4px] border border-dashed border-line"
+                />
+              )
+            )}
+          </div>
+          <div className="flex gap-1.5 text-center text-[11px] text-muted">
+            {days.map(({ date }) => (
+              <span key={date.toISOString()} className="flex-1">
+                {date.toLocaleDateString('en-US', { weekday: 'narrow' })}
+              </span>
+            ))}
+          </div>
+          <p className="text-xs text-muted">
+            {all.reduce((sum, d) => sum + d.count, 0)} check-ins on {all.length} of 7 days
+          </p>
+        </>
+      ) : (
+        <div className="flex h-[140px] items-center justify-center rounded-[10px] border border-dashed border-line px-4 text-center text-sm text-muted">
+          No check-ins this week yet. Rate your stress above to start your week.
+        </div>
+      )}
     </Section>
   )
 }

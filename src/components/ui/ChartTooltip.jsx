@@ -12,7 +12,7 @@ export function dayTip(date, checkIn, future = false) {
     mood: checkIn.mood,
     moodText: moodLabel(checkIn.mood),
     note: checkIn.note,
-    meta: `${checkIn.songs} songs picked`,
+    meta: checkIn.meta,
   }
 }
 

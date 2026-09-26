@@ -98,11 +98,11 @@ export default function CheckInList({ title, checkIns, periodKey }) {
           <span className={`size-3.5 shrink-0 rounded-full ${moodBg[c.mood]}`} />
           <div className="min-w-0 flex-1">
             <p className="text-[15px] font-semibold">{moodLabel(c.mood)}</p>
-            <p className="mt-0.5 truncate text-[13px] text-muted">{c.note}</p>
+            <p className="mt-0.5 truncate text-[13px] text-muted">{c.note || `${c.count} check-in${c.count === 1 ? '' : 's'}`}</p>
           </div>
           <div className="shrink-0 text-right text-[13px] text-muted">
             <p>{whenLabel(c.date)}</p>
-            <p className="mt-0.5">{c.songs} songs</p>
+            <p className="mt-0.5">{c.real ? `${c.rating}/10` : `${c.songs} songs`}</p>
           </div>
         </div>
       ))}

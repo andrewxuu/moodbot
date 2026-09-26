@@ -8,9 +8,10 @@ import MoodWeekChart from '../components/mood/MoodWeekChart'
 import MoodWeeks from '../components/mood/MoodWeeks'
 import SegmentedSwitch from '../components/ui/SegmentedSwitch'
 import { moodLevels } from '../data/data'
-import { checkInsBetween, daysBetween, sampleCheckIn } from '../data/sampleMoods'
+import { checkInFor, checkInsBetween, daysBetween } from '../data/sampleMoods'
 import { periodStats } from '../lib/moodStats'
 import { moodLabel as label } from '../lib/moodMonth'
+import { useRatings } from '../ratings'
 
 const moodBg = {
   great: 'bg-mood-great',
@@ -59,12 +60,13 @@ function PeriodNav({ title, onPrev, onNext, canGoNext, unit }) {
 }
 
 export default function MoodPage() {
+  useRatings()
   const [range, setRange] = useState('Week')
   const [offset, setOffset] = useState(0)
   const [monthView, setMonthView] = useState('Calendar')
   const today = new Date()
   const period = periodFor(range, offset, today)
-  const week = daysBetween(period.start, period.end).map((date) => ({ date, checkIn: sampleCheckIn(date, today) }))
+  const week = daysBetween(period.start, period.end).map((date) => ({ date, checkIn: checkInFor(date, today) }))
   const previousPeriod = periodFor(range, offset - 1, today)
   const compareTo =
     range === 'Month'
@@ -110,7 +112,7 @@ export default function MoodPage() {
               {range === 'Month' && (
                 <SegmentedSwitch size="sm" options={['Weeks', 'Calendar', 'Daily']} value={monthView} onChange={setMonthView} />
               )}
-              <p className="text-xs text-muted">Sample data</p>
+              <p className="text-xs text-muted">Past days include sample data</p>
             </div>
           </div>
           {range === 'Week' ? (

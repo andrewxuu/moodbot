@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import { setRealRatings } from './data/sampleMoods'
 
 const STORAGE_KEY = 'moodbot:ratings'
 const RatingsContext = createContext(null)
@@ -17,6 +18,7 @@ const load = () => {
 
 export function RatingsProvider({ children }) {
   const [ratings, setRatings] = useState(load)
+  setRealRatings(ratings)
 
   useEffect(() => {
     try {

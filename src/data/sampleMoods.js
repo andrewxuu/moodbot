@@ -58,9 +58,53 @@ export function daysBetween(start, end) {
   return days
 }
 
+let realByDay = new Map()
+
+export function setRealRatings(ratings) {
+  const map = new Map()
+  for (const r of ratings) {
+    const key = dayKey(new Date(r.at))
+    map.set(key, [...(map.get(key) ?? []), r])
+  }
+  realByDay = map
+}
+
+const bandMood = (rating) => scoreMood[Math.min(5, Math.floor((rating - 1) / 2) + 1)]
+
+function realCheckIn(day, logged) {
+  const avg = logged.reduce((sum, r) => sum + r.rating, 0) / logged.length
+  const rating = Math.round(avg * 10) / 10
+  const count = logged.length
+  const latestNote = [...logged].sort((a, b) => b.at.localeCompare(a.at)).find((r) => r.note)?.note
+  return {
+    id: `real-${dayKey(day)}`,
+    date: day,
+    mood: bandMood(Math.round(avg)),
+    score: Math.max(1, avg / 2),
+    rating,
+    count,
+    real: true,
+    note: latestNote ?? '',
+    songs: 0,
+    meta: `${rating}/10 · ${count} check-in${count === 1 ? '' : 's'}`,
+  }
+}
+
+export function checkInFor(date, today = new Date()) {
+  const day = startOfDay(date)
+  const now = startOfDay(today)
+  if (day > now) return null
+  const logged = realByDay.get(dayKey(day))
+  if (logged?.length) return realCheckIn(day, logged)
+  if (day >= now) return null
+  const sample = sampleCheckIn(day, today)
+  if (!sample) return null
+  return { ...sample, rating: sample.score * 2, count: 1, real: false, meta: `${sample.songs} songs picked` }
+}
+
 export function checkInsBetween(start, end, today = new Date()) {
   return daysBetween(start, end)
-    .map((d) => sampleCheckIn(d, today))
+    .map((d) => checkInFor(d, today))
     .filter(Boolean)
 }
 

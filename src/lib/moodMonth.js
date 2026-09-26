@@ -1,4 +1,4 @@
-import { sampleCheckIn } from '../data/sampleMoods'
+import { checkInFor } from '../data/sampleMoods'
 
 export const moodBg = {
   great: 'bg-mood-great',
@@ -24,7 +24,7 @@ export function buildWeeks(monthStart, today) {
 
   for (let d = 1; d <= lastDay; d++) {
     const date = new Date(year, month, d)
-    cells.push({ date, future: date > today, checkIn: sampleCheckIn(date, today) })
+    cells.push({ date, future: date > today, checkIn: checkInFor(date, today) })
   }
   while (cells.length % 7) cells.push(null)
 
