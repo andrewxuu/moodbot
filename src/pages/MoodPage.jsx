@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import CheckInList from '../components/mood/CheckInList'
 import MoodCalendar from '../components/mood/MoodCalendar'
 import MoodDaily from '../components/mood/MoodDaily'
 import MoodStats from '../components/mood/MoodStats'
@@ -7,7 +8,7 @@ import MoodWeekChart from '../components/mood/MoodWeekChart'
 import MoodWeeks from '../components/mood/MoodWeeks'
 import SegmentedSwitch from '../components/ui/SegmentedSwitch'
 import { moodLevels } from '../data/data'
-import { checkInsBetween, daysBetween, sampleCheckIn, whenLabel } from '../data/sampleMoods'
+import { checkInsBetween, daysBetween, sampleCheckIn } from '../data/sampleMoods'
 import { periodStats } from '../lib/moodStats'
 
 const moodBg = {
@@ -75,9 +76,15 @@ export default function MoodPage() {
     setRange(value)
     setOffset(0)
   }
-  const recent = checkInsBetween(new Date(today.getFullYear(), today.getMonth(), today.getDate() - 13), today)
-    .reverse()
-    .slice(0, 4)
+  const periodCheckIns = checkInsBetween(period.start, period.end, today).reverse()
+  const listTitle =
+    range === 'Month'
+      ? `Check-ins in ${period.start.toLocaleDateString('en-US', { month: 'long' })}`
+      : offset === 0
+        ? 'Check-ins this week'
+        : offset === -1
+          ? 'Check-ins last week'
+          : `Check-ins, ${period.title}`
 
   return (
     <section className="flex flex-col gap-5 px-10 py-8">
@@ -138,26 +145,7 @@ export default function MoodPage() {
         compareTo={compareTo}
       />
 
-      <div className="flex flex-col gap-2.5">
-        <h2 className="text-base font-semibold">Recent check-ins</h2>
-        {recent.map((c) => (
-          <button
-            key={c.id}
-            type="button"
-            className="flex h-[60px] items-center gap-3 rounded-[14px] border border-line bg-white px-3.5 text-left hover:border-teal"
-          >
-            <span className={`size-3.5 shrink-0 rounded-full ${moodBg[c.mood]}`} />
-            <div className="flex-1">
-              <p className="text-[15px] font-semibold">{label(c.mood)}</p>
-              <p className="mt-0.5 text-[13px] text-muted">{c.note}</p>
-            </div>
-            <div className="text-right text-[13px] text-muted">
-              <p>{whenLabel(c.date, today)}</p>
-              <p className="mt-0.5">{c.songs} songs</p>
-            </div>
-          </button>
-        ))}
-      </div>
+      <CheckInList title={listTitle} checkIns={periodCheckIns} periodKey={`${range}-${offset}`} />
     </section>
   )
 }
