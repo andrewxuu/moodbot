@@ -2,11 +2,13 @@ import { useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import MoodCalendar from '../components/mood/MoodCalendar'
 import MoodDaily from '../components/mood/MoodDaily'
+import MoodStats from '../components/mood/MoodStats'
 import MoodWeekChart from '../components/mood/MoodWeekChart'
 import MoodWeeks from '../components/mood/MoodWeeks'
 import SegmentedSwitch from '../components/ui/SegmentedSwitch'
 import { moodLevels } from '../data/data'
 import { checkInsBetween, daysBetween, sampleCheckIn, whenLabel } from '../data/sampleMoods'
+import { periodStats } from '../lib/moodStats'
 
 const moodBg = {
   great: 'bg-mood-great',
@@ -55,12 +57,6 @@ function PeriodNav({ title, onPrev, onNext, canGoNext, unit }) {
   )
 }
 
-const stats = [
-  { label: 'Most common', value: '[Mood]' },
-  { label: 'Check-ins this week', value: '[#]' },
-  { label: 'Songs saved from chats', value: '[#]' },
-]
-
 export default function MoodPage() {
   const [range, setRange] = useState('Week')
   const [offset, setOffset] = useState(0)
@@ -68,6 +64,13 @@ export default function MoodPage() {
   const today = new Date()
   const period = periodFor(range, offset, today)
   const week = daysBetween(period.start, period.end).map((date) => ({ date, checkIn: sampleCheckIn(date, today) }))
+  const previousPeriod = periodFor(range, offset - 1, today)
+  const compareTo =
+    range === 'Month'
+      ? previousPeriod.start.toLocaleDateString('en-US', { month: 'long' })
+      : offset === 0
+        ? 'last week'
+        : 'the week before'
   const changeRange = (value) => {
     setRange(value)
     setOffset(0)
@@ -86,7 +89,7 @@ export default function MoodPage() {
         <SegmentedSwitch size="sm" options={['Week', 'Month']} value={range} onChange={changeRange} />
       </div>
 
-      <div className="flex gap-5">
+      <div className="flex">
         <div className="flex min-w-0 flex-1 flex-col gap-3 rounded-[14px] border border-line bg-white p-4">
           <div className="flex items-center justify-between">
             <PeriodNav
@@ -127,16 +130,13 @@ export default function MoodPage() {
             )}
           </div>
         </div>
-
-        <div className="flex w-[280px] shrink-0 flex-col gap-3">
-          {stats.map((s) => (
-            <div key={s.label} className="rounded-[14px] border border-line bg-white px-3.5 py-3">
-              <p className="text-[13px] text-muted">{s.label}</p>
-              <p className="mt-0.5 text-xl font-semibold">{s.value}</p>
-            </div>
-          ))}
-        </div>
       </div>
+
+      <MoodStats
+        current={periodStats(period.start, period.end, today)}
+        previous={periodStats(previousPeriod.start, previousPeriod.end, today)}
+        compareTo={compareTo}
+      />
 
       <div className="flex flex-col gap-2.5">
         <h2 className="text-base font-semibold">Recent check-ins</h2>
