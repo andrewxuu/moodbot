@@ -13,11 +13,11 @@ export default {
         art: '#d6dee8',
         teal: { DEFAULT: '#2f6f6a', soft: '#e6efec' },
         mood: {
-          great: '#c8642a',
-          good: '#e0a45e',
-          okay: '#a8a69c',
-          low: '#5f7fa8',
-          awful: '#3b4a6b',
+          great: '#1c4a86',
+          good: '#4a8ae0',
+          okay: '#84817a',
+          low: '#d97a22',
+          awful: '#b3322a',
         },
       },
       fontFamily: {
