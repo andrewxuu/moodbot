@@ -10,6 +10,7 @@ import SegmentedSwitch from '../components/ui/SegmentedSwitch'
 import { moodLevels } from '../data/data'
 import { checkInsBetween, daysBetween, sampleCheckIn } from '../data/sampleMoods'
 import { periodStats } from '../lib/moodStats'
+import { moodLabel as label } from '../lib/moodMonth'
 
 const moodBg = {
   great: 'bg-mood-great',
@@ -18,7 +19,6 @@ const moodBg = {
   low: 'bg-mood-low',
   awful: 'bg-mood-awful',
 }
-const label = (m) => m[0].toUpperCase() + m.slice(1)
 const shortDate = (d) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 
 function periodFor(range, offset, today) {
@@ -90,8 +90,8 @@ export default function MoodPage() {
     <section className="flex flex-col gap-5 px-10 py-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-serif text-[30px] font-semibold">Your moods</h1>
-          <p className="mt-1 text-[15px] text-muted">Logged from your chats</p>
+          <h1 className="font-serif text-[30px] font-semibold">Your stress</h1>
+          <p className="mt-1 text-[15px] text-muted">Logged from your check-ins</p>
         </div>
         <SegmentedSwitch size="sm" options={['Week', 'Month']} value={range} onChange={changeRange} />
       </div>

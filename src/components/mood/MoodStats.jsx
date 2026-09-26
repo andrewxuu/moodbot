@@ -41,7 +41,7 @@ export default function MoodStats({ current, previous, compareTo }) {
 
   return (
     <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
-      <Card label="Average mood" sub={<AverageChange now={current.avg} before={previous.avg} compareTo={compareTo} />}>
+      <Card label="Average stress" sub={<AverageChange now={current.avg} before={previous.avg} compareTo={compareTo} />}>
         {avgMood ? (
           <>
             <Dot mood={avgMood} />
@@ -66,7 +66,7 @@ export default function MoodStats({ current, previous, compareTo }) {
         )}
       </Card>
 
-      <Card label="Best day" sub={current.best ? moodLabel(current.best.mood) : 'No check-ins yet'}>
+      <Card label="Calmest day" sub={current.best ? moodLabel(current.best.mood) : 'No check-ins yet'}>
         {current.best ? (
           <>
             <Dot mood={current.best.mood} />

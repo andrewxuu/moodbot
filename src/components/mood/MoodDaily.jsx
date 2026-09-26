@@ -11,7 +11,7 @@ const moodFill = {
 
 const W = 720
 const H = 220
-const LEFT = 44
+const LEFT = 88
 const TOP = 8
 const BOTTOM = 22
 const y = (score) => TOP + (H - TOP - BOTTOM) * (1 - score / 5)
@@ -27,7 +27,7 @@ export default function MoodDaily({ monthStart }) {
 
   return (
     <div ref={ref} className="relative">
-    <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label="Daily moods with weekly average line">
+    <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label="Daily stress with weekly average line">
       {[1, 2, 3, 4, 5].map((score) => (
         <g key={score}>
           <line x1={LEFT} x2={W} y1={y(score)} y2={y(score)} strokeWidth="1" className="stroke-track" />

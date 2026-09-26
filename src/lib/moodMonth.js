@@ -8,7 +8,8 @@ export const moodBg = {
   awful: 'bg-mood-awful',
 }
 export const scoreMood = ['', 'awful', 'low', 'okay', 'good', 'great']
-export const moodLabel = (m) => m[0].toUpperCase() + m.slice(1)
+export const stressNames = { great: 'Calm', good: 'Relaxed', okay: 'Some stress', low: 'Stressed', awful: 'Very stressed' }
+export const moodLabel = (m) => stressNames[m] ?? m
 
 export const startOfToday = () => {
   const now = new Date()

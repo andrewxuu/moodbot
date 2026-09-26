@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import Sidebar from './components/layout/Sidebar'
 import SettingsModal from './components/settings/SettingsModal'
 import { ThemeProvider } from './theme'
+import { RatingsProvider } from './ratings'
 import CallbackPage from './pages/CallbackPage'
 import ChatPage from './pages/ChatPage'
 import HomePage from './pages/HomePage'
@@ -33,7 +34,9 @@ export default function App() {
       <SpotifyProvider>
         <PlayerProvider>
           <FeedbackProvider>
-            <Moodbot />
+            <RatingsProvider>
+              <Moodbot />
+            </RatingsProvider>
           </FeedbackProvider>
         </PlayerProvider>
       </SpotifyProvider>

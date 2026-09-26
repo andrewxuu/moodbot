@@ -4,7 +4,7 @@ import { useSpotify } from '../../spotify/useSpotify'
 const links = [
   { id: 'home', label: 'Home', icon: House },
   { id: 'chat', label: 'Chat', icon: MessageCircle },
-  { id: 'mood', label: 'Mood', icon: Smile },
+  { id: 'mood', label: 'Wellbeing', icon: Smile },
   { id: 'saved', label: 'Saved songs', icon: Heart },
   { id: 'playlists', label: 'Playlists', icon: List },
 ]
