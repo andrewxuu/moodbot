@@ -1,4 +1,4 @@
-import { sampleCheckIn } from './sampleMoods'
+import { sampleCheckIn } from '../data/sampleMoods'
 
 export const moodBg = {
   great: 'bg-mood-great',

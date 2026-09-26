@@ -1,6 +1,6 @@
 import { Heart, List, MessageCircle, Music, Smile } from 'lucide-react'
-import SpotifyStatus from './SpotifyStatus'
-import { useSpotify } from '../spotify/useSpotify'
+import SpotifyStatus from '../SpotifyStatus'
+import { useSpotify } from '../../spotify/useSpotify'
 
 const links = [
   { id: 'chat', label: 'Chat', icon: MessageCircle },

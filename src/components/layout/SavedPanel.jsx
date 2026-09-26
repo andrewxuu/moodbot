@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { PanelRightClose, PanelRightOpen, Search } from 'lucide-react'
-import AlbumArt from './AlbumArt'
+import AlbumArt from '../songs/AlbumArt'
 import IconButton from './IconButton'
-import SongRow from './SongRow'
-import { usePlayer } from '../spotify/usePlayer'
-import { matchesSearch } from '../search'
+import SongRow from '../SongRow'
+import { usePlayer } from '../../spotify/usePlayer'
+import { matchesSearch } from '../../lib/search'
 
 const COLLAPSED_KEY = 'moodbot:saved-panel-collapsed'
 const LIMIT = 11

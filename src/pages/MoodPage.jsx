@@ -3,9 +3,9 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import MoodCalendar from '../components/MoodCalendar'
 import MoodDaily from '../components/MoodDaily'
 import MoodWeeks from '../components/MoodWeeks'
-import SegmentedSwitch from '../components/SegmentedSwitch'
-import { moodLevels } from '../data'
-import { checkInsBetween, daysBetween, sampleCheckIn, whenLabel } from '../sampleMoods'
+import SegmentedSwitch from '../components/ui/SegmentedSwitch'
+import { moodLevels } from '../data/data'
+import { checkInsBetween, daysBetween, sampleCheckIn, whenLabel } from '../data/sampleMoods'
 
 const moodBg = {
   great: 'bg-mood-great',

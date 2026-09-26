@@ -1,5 +1,5 @@
 import { getAccessToken, logout, ReconnectError } from './auth'
-import { normalize } from '../filters'
+import { normalize } from '../lib/filters'
 
 const BASE = 'https://api.spotify.com/v1'
 

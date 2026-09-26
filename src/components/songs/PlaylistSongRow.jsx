@@ -2,7 +2,7 @@ import { Heart, X } from 'lucide-react'
 import AlbumArt from './AlbumArt'
 import IconButton from './IconButton'
 import SpotifyEmbed from './SpotifyEmbed'
-import { usePlayer } from '../spotify/usePlayer'
+import { usePlayer } from '../../spotify/usePlayer'
 
 export const PLAYLIST_COLUMNS =
   'grid grid-cols-[28px_minmax(0,1fr)_52px_44px] lg:grid-cols-[28px_minmax(0,2fr)_minmax(0,1.3fr)_52px_44px] xl:grid-cols-[28px_minmax(0,2fr)_minmax(0,1.3fr)_112px_52px_44px] items-center gap-4'

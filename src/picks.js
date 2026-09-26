@@ -1,6 +1,6 @@
 import { getAudioFeatures } from './reccobeats'
 import { searchTrack } from './spotify/api'
-import { FILTERS, firstArtist, libraryProfile, passesLanguage, songKey } from './filters'
+import { FILTERS, firstArtist, libraryProfile, passesLanguage, songKey } from './lib/filters'
 import { getArtistTopTracks, getSimilarArtists, getSimilarTracks, isLastfmConfigured } from './lastfm'
 
 const moodWords = {

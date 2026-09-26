@@ -1,5 +1,5 @@
 import { Heart, Plus, X } from 'lucide-react'
-import AlbumArt from './AlbumArt'
+import AlbumArt from './songs/AlbumArt'
 import IconButton from './IconButton'
 import SongThumbs from './SongThumbs'
 import SpotifyEmbed from './SpotifyEmbed'
