@@ -1,7 +1,8 @@
 import { getAudioFeatures } from './services/reccobeats'
 import { searchTrack } from './spotify/api'
 import { FILTERS, firstArtist, libraryProfile, passesLanguage, songKey } from './lib/filters'
-import { getArtistTopTracks, getSimilarArtists, getSimilarTracks, isLastfmConfigured } from './services/lastfm'
+import { getArtistTopTracks, getSimilarArtists, getSimilarTracks, getTagTopTracks, isLastfmConfigured } from './services/lastfm'
+import { discoveryTags, scoreSongs } from './lib/moodTags'
 
 const moodWords = {
   Calm: ['calm', 'chill', 'relax', 'tired', 'long day', 'peace', 'slow'],
@@ -86,6 +87,71 @@ const FEEDBACK = {
   tasteBlend: 0.35,
 }
 
+const TAGS = {
+  sampleSize: 6,
+  discoveryTags: 2,
+  discoveryPages: 3,
+  searched: 4,
+  maxPicks: 1,
+  tasteWeight: 0.3,
+}
+
+async function rankByTags(list, mood, n) {
+  const sample = shuffle(list.slice(0, 25)).slice(0, TAGS.sampleSize)
+  const scores = await scoreSongs(sample, mood)
+  return sample
+    .map((song, i) => ({ song, score: scores[i].score }))
+    .filter((x) => x.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, n)
+    .map((x) => x.song)
+}
+
+async function tagCandidates(mood, knownKeys, profile) {
+  const tags = shuffle(discoveryTags(mood)).slice(0, TAGS.discoveryTags)
+  const pageFor = () => String(1 + Math.floor(Math.random() * TAGS.discoveryPages))
+  const lists = await Promise.allSettled(tags.map((tag) => getTagTopTracks(tag, 50, pageFor())))
+  const out = new Map()
+  lists.forEach((r, i) => {
+    if (r.status !== 'fulfilled') return
+    r.value.forEach((t) => {
+      if (!t.title || !t.artist) return
+      const key = songKey(t.artist, t.title)
+      if (out.has(key) || knownKeys.has(key) || !passesLanguage(t, profile)) return
+      out.set(key, { ...t, score: 0, fromTag: tags[i] })
+    })
+  })
+  return shuffle([...out.values()])
+}
+
+async function byTags(found, mood) {
+  const scores = await scoreSongs(found.map((x) => x.song), mood)
+  const top = Math.max(...found.map((x) => x.score), 1)
+  const fits = found
+    .map((x, i) => ({ ...x, tagScore: scores[i].score, tags: scores[i].matched }))
+    .filter((x) => x.tagScore > 0)
+  if (fits.length < 2) return null
+  const rank = (x) => x.tagScore + TAGS.tasteWeight * (x.score / top)
+  return fits.sort((a, b) => rank(b) - rank(a))
+}
+
+function chooseNew(ordered, n) {
+  const out = []
+  let fromTags = 0
+  for (const x of ordered) {
+    if (out.length === n) break
+    if (x.fromTag && fromTags >= TAGS.maxPicks) continue
+    if (x.fromTag) fromTags++
+    out.push(x)
+  }
+  return out
+}
+
+function joinWords(words) {
+  if (words.length < 2) return words[0] ?? ''
+  return `${words.slice(0, -1).join(', ')} and ${words.at(-1)}`
+}
+
 async function dislikePenalties(disliked) {
   const penalties = new Map()
   const lists = await Promise.allSettled(
@@ -137,7 +203,9 @@ async function resolveOnSpotify(candidates, knownIds, exclude) {
   const results = await Promise.allSettled(candidates.map((c) => searchTrack(c.title, c.artist)))
   const seen = new Set()
   return results
-    .map((r, i) => (r.status === 'fulfilled' && r.value ? { song: r.value, score: candidates[i].score } : null))
+    .map((r, i) =>
+      r.status === 'fulfilled' && r.value ? { song: r.value, score: candidates[i].score, fromTag: candidates[i].fromTag } : null
+    )
     .filter((x) => {
       if (!x || knownIds.has(x.song.id) || exclude.includes(x.song.id) || seen.has(x.song.id)) return false
       seen.add(x.song.id)
@@ -181,6 +249,8 @@ export async function getPicks({ top, library, pool, mood, mode, exclude = [], a
   const lifting = mode === 'Lift my mood' && Boolean(mood)
   const baseTarget = targetsFor(mood, lifting)
   const hasMood = Object.keys(baseTarget).length > 0
+  const tagMood = mood ? (lifting ? liftTo[mood] : mood) : null
+  const useTags = Boolean(tagMood) && isLastfmConfigured()
   const dislikedIds = new Set(feedback.disliked.map((s) => s.id))
   exclude = [...exclude, ...dislikedIds]
   const topSongs = top.slice(0, 40)
@@ -211,17 +281,22 @@ export async function getPicks({ top, library, pool, mood, mode, exclude = [], a
   const target = hasMood && Object.keys(taste).length ? blend(baseTarget, taste, FEEDBACK.tasteBlend) : baseTarget
   const useFeatures = hasMood && Object.values(features).some(Boolean)
 
+  const pickForMood = async (list, n) => {
+    const tagged = useTags ? await rankByTags(list, tagMood, n) : []
+    const backup = useFeatures ? closest(list, features, target, n + tagged.length) : shuffle(list.slice(0, 20))
+    return [...new Map([...tagged, ...backup].map((s) => [s.id, s])).values()].slice(0, n)
+  }
+
   const perGroup = fromFeedback.length ? 2 : 3
   const usable = (list) => list.filter((s) => !dislikedIds.has(s.id))
-  const seedTop = useFeatures ? closest(usable(topSongs), features, target, perGroup) : shuffle(usable(topSongs).slice(0, 15)).slice(0, perGroup)
-  const seedLiked = useFeatures ? closest(usable(likedSongs), features, target, perGroup) : shuffle(usable(likedSongs).slice(0, 20)).slice(0, perGroup)
+  const [seedTop, seedLiked] = await Promise.all([pickForMood(usable(topSongs), perGroup), pickForMood(usable(likedSongs), perGroup)])
   const seeds = [...new Map([...fromFeedback, ...seedTop, ...seedLiked].map((s) => [s.id, s])).values()]
   const seedIds = seeds.map((s) => s.id)
 
   const familiarPool = [...new Map([...topSongs, ...likedSongs, ...upvoted].map((s) => [s.id, s])).values()].filter(
     (s) => !exclude.includes(s.id) && !seedIds.includes(s.id) && notShown(s)
   )
-  const familiarOptions = useFeatures ? closest(familiarPool, features, target, 5) : familiarPool.slice(0, 20)
+  const familiarOptions = await pickForMood(familiarPool, 5)
   const familiar = shuffle(familiarOptions)[0]
   const familiarOnly = (reason) => ({
     songs: (familiar
@@ -237,11 +312,18 @@ export async function getPicks({ top, library, pool, mood, mode, exclude = [], a
 
   try {
     const penalties = feedback.disliked.length ? await dislikePenalties(feedback.disliked) : new Map()
-    const ranked = await findCandidates(seeds, knownKeys, profile, { boosted: new Set(fromFeedback.map((s) => s.id)), penalties })
-    const toResolve = shuffle(ranked.slice(0, 16)).slice(0, 10)
+    const [ranked, tagged] = await Promise.all([
+      findCandidates(seeds, knownKeys, profile, { boosted: new Set(fromFeedback.map((s) => s.id)), penalties }),
+      useTags ? tagCandidates(tagMood, knownKeys, profile) : [],
+    ])
+    const similar = shuffle(ranked.slice(0, 16)).slice(0, tagged.length ? 10 - TAGS.searched : 10)
+    const similarKeys = new Set(similar.map((c) => songKey(c.artist, c.title)))
+    const fromTags = tagged.filter((c) => !similarKeys.has(songKey(c.artist, c.title))).slice(0, TAGS.searched)
+    const toResolve = [...similar, ...fromTags]
     const found = await resolveOnSpotify(toResolve, knownIds, exclude)
     console.debug('[moodbot] Last.fm picks', {
       candidates: ranked.length,
+      fromTags: fromTags.length,
       searched: toResolve.length,
       onSpotify: found.length,
       feedbackSeeds: fromFeedback.length,
@@ -249,8 +331,10 @@ export async function getPicks({ top, library, pool, mood, mode, exclude = [], a
     })
     if (!found.length) throw new Error('No new songs found on Spotify.')
 
-    const ordered = hasMood ? await byMood(found, target) : [...found].sort((a, b) => b.score - a.score)
-    const newSongs = ordered.slice(0, 2).map((x) => ({ ...x.song, isNew: true }))
+    let ordered = useTags ? await byTags(found, tagMood).catch(() => null) : null
+    if (!ordered) ordered = hasMood ? await byMood(found, target) : [...found].sort((a, b) => b.score - a.score)
+    const chosen = chooseNew(ordered, 2)
+    const newSongs = chosen.map((x) => ({ ...x.song, isNew: true }))
 
     const extraFamiliar = familiarOptions.filter((s) => s.id !== familiar?.id).slice(0, 2 - newSongs.length)
     const familiarSongs = familiar ? [familiar, ...extraFamiliar] : extraFamiliar
@@ -258,7 +342,16 @@ export async function getPicks({ top, library, pool, mood, mode, exclude = [], a
     const count = newSongs.length
     const knownCount = songs.length - count
     const how = hasMood ? (lifting ? ', picked to lift your mood' : `, tuned to feel ${feel[mood]}`) : ''
-    const tail = knownCount ? `, plus ${knownCount} you already love.` : '.'
+    const tagSource = chosen.find((x) => x.fromTag)?.fromTag
+    const allFromTags = chosen.every((x) => x.fromTag)
+    const source = !tagSource
+      ? 'that fans of your top tracks and liked songs also play'
+      : allFromTags
+        ? `from Last.fm's top "${tagSource}" tracks`
+        : `from fans of your top tracks and Last.fm's top "${tagSource}" tracks`
+    const tagWords = [...new Set(chosen.flatMap((x) => (x.tags?.length ? x.tags : x.fromTag ? [x.fromTag] : [])))].slice(0, 3)
+    const tagLine = tagWords.length ? ` Listeners tag ${count === 1 ? 'it' : 'them'} ${joinWords(tagWords)}.` : ''
+    const knownLine = knownCount ? ` Plus ${knownCount} you already love.` : ''
 
     const shaped = feedback.liked.length || feedback.disliked.length
     const moodName = mood ? mood.toLowerCase() : 'no-mood'
@@ -266,7 +359,7 @@ export async function getPicks({ top, library, pool, mood, mode, exclude = [], a
 
     return {
       songs,
-      reason: `${count} new ${count === 1 ? 'find' : 'finds'} that fans of your top tracks and liked songs also play${how}${tail}${note}`,
+      reason: `${count} new ${count === 1 ? 'find' : 'finds'} ${source}${how}.${tagLine}${knownLine}${note}`,
     }
   } catch {
     return familiarOnly('Couldn’t find new songs this time, so these are from your top tracks and liked songs.')
