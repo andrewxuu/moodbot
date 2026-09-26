@@ -1,7 +1,8 @@
-import { Heart, List, MessageCircle, Music, Smile } from 'lucide-react'
+import { Heart, House, List, MessageCircle, Music, Smile } from 'lucide-react'
 import { useSpotify } from '../../spotify/useSpotify'
 
 const links = [
+  { id: 'home', label: 'Home', icon: House },
   { id: 'chat', label: 'Chat', icon: MessageCircle },
   { id: 'mood', label: 'Mood', icon: Smile },
   { id: 'saved', label: 'Saved songs', icon: Heart },

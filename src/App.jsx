@@ -4,6 +4,7 @@ import SettingsModal from './components/settings/SettingsModal'
 import { ThemeProvider } from './theme'
 import CallbackPage from './pages/CallbackPage'
 import ChatPage from './pages/ChatPage'
+import HomePage from './pages/HomePage'
 import MoodPage from './pages/MoodPage'
 import SavedSongsPage from './pages/SavedSongsPage'
 import PlaylistsPage from './pages/PlaylistsPage'
@@ -47,9 +48,9 @@ function Moodbot() {
   const logOut = () => {
     disconnect()
     setSettingsOpen(false)
-    setPage('chat')
+    setPage('home')
   }
-  const [page, setPage] = useState('chat')
+  const [page, setPage] = useState('home')
   const [chatSaved, setChatSaved] = useState(loadSaved)
 
   useEffect(() => {
@@ -73,6 +74,7 @@ function Moodbot() {
 
   const shared = { savedSongs, isSaved, onSave: toggleSave }
   const pages = {
+    home: <HomePage />,
     chat: <ChatPage {...shared} onNavigate={setPage} />,
     mood: <MoodPage />,
     saved: <SavedSongsPage {...shared} />,
