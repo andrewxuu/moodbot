@@ -7,7 +7,7 @@ export const moodBg = {
   low: 'bg-mood-low',
   awful: 'bg-mood-awful',
 }
-export const scoreMood = ['', 'awful', 'low', 'okay', 'good', 'great']
+export const scoreMood = ['', 'great', 'good', 'okay', 'low', 'awful']
 export const stressNames = { great: 'Calm', good: 'Relaxed', okay: 'Some stress', low: 'Stressed', awful: 'Very stressed' }
 export const moodLabel = (m) => stressNames[m] ?? m
 

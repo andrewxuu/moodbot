@@ -1,5 +1,5 @@
-export const moodScore = { awful: 1, low: 2, okay: 3, good: 4, great: 5 }
-export const scoreMood = ['', 'awful', 'low', 'okay', 'good', 'great']
+export const moodScore = { great: 1, good: 2, okay: 3, low: 4, awful: 5 }
+export const scoreMood = ['', 'great', 'good', 'okay', 'low', 'awful']
 
 const notes = {
   great: ['Best day in a while, want to keep it going', 'Got great news today', 'Feeling unstoppable after the gym'],
@@ -36,7 +36,7 @@ export function sampleCheckIn(date, today = new Date()) {
   const weekend = day.getDay() === 0 || day.getDay() === 6
   const drift = Math.sin(day.getTime() / (1000 * 60 * 60 * 24 * 9)) * 0.6
   const raw = 3.1 + drift + (weekend ? 0.4 : 0) + (rand() - 0.5) * 3.6
-  const score = Math.min(5, Math.max(1, Math.round(raw)))
+  const score = 6 - Math.min(5, Math.max(1, Math.round(raw)))
   const mood = scoreMood[score]
   const options = notes[mood]
 
@@ -69,7 +69,7 @@ export function setRealRatings(ratings) {
   realByDay = map
 }
 
-const bandMood = (rating) => scoreMood[Math.min(5, Math.floor((rating - 1) / 2) + 1)]
+const bandMood = (rating) => scoreMood[Math.min(4, Math.floor((rating - 1) / 2)) + 1]
 
 function realCheckIn(day, logged) {
   const avg = logged.reduce((sum, r) => sum + r.rating, 0) / logged.length

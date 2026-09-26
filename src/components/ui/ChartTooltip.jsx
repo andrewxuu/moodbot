@@ -19,7 +19,7 @@ export function dayTip(date, checkIn, future = false) {
 export function weekTip(index, days, avg, count) {
   const title = `Week ${index + 1}, ${shortDate(days[0].date)}–${days.at(-1).date.getDate()}`
   if (!avg) return { key: `week-${index}`, title, meta: 'No check-ins' }
-  const mood = ['', 'awful', 'low', 'okay', 'good', 'great'][Math.round(avg)]
+  const mood = ['', 'great', 'good', 'okay', 'low', 'awful'][Math.round(avg)]
   return {
     key: `week-${index}`,
     title,

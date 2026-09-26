@@ -11,10 +11,10 @@ export function periodStats(start, end, today) {
   checkIns.forEach((c) => (counts[c.mood] = (counts[c.mood] ?? 0) + 1))
   const byCount = checkIns
     .map((c) => ({ mood: c.mood, score: c.score, count: counts[c.mood] }))
-    .sort((a, b) => b.count - a.count || b.score - a.score)
+    .sort((a, b) => b.count - a.count || a.score - b.score)
   const mostCommon = { mood: byCount[0].mood, count: byCount[0].count }
 
-  const best = checkIns.reduce((top, c) => (c.score >= top.score ? c : top), checkIns[0])
+  const best = checkIns.reduce((top, c) => (c.score <= top.score ? c : top), checkIns[0])
 
   return {
     days,

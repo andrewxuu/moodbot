@@ -26,18 +26,6 @@ function Section({ title, aside, children, className = '' }) {
   )
 }
 
-function SongPlaceholder() {
-  return (
-    <div className="flex items-center gap-3">
-      <div className="size-10 shrink-0 rounded-lg bg-art" />
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-[15px] font-semibold">[Song title]</p>
-        <p className="mt-0.5 truncate text-[13px] text-muted">[Artist]</p>
-      </div>
-    </div>
-  )
-}
-
 const timeOf = (iso) => new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
 const isToday = (iso) => new Date(iso).toDateString() === new Date().toDateString()
 
@@ -223,18 +211,6 @@ function WeekSnapshot() {
   )
 }
 
-function Picks() {
-  return (
-    <Section title="Picks for you">
-      <div className="flex flex-col gap-3">
-        <SongPlaceholder />
-        <SongPlaceholder />
-        <SongPlaceholder />
-      </div>
-    </Section>
-  )
-}
-
 function SeeAll({ onClick }) {
   return (
     <button type="button" onClick={onClick} className="text-[13px] font-semibold text-teal hover:underline">
@@ -243,37 +219,41 @@ function SeeAll({ onClick }) {
   )
 }
 
-function RecentlySaved({ savedSongs, isSaved, onSave, onNavigate, onOpenPlaylist }) {
-  const { status, playlists } = useSpotify()
+function RecentlySaved({ savedSongs, isSaved, onSave, onNavigate }) {
+  const { status } = useSpotify()
   const songs = savedSongs.slice(0, 4)
-  const lists = playlists.slice(0, 4)
-  const syncing = status === 'syncing'
-  const needsSpotify = status === 'disconnected' || status === 'expired'
-
-  const noPlaylists = syncing
-    ? 'Loading your playlists…'
-    : needsSpotify
-      ? 'Connect Spotify to see your playlists here.'
-      : 'Your Spotify account doesn’t have any playlists yet.'
 
   return (
     <Section title="Recently saved" aside={songs.length > 0 && <SeeAll onClick={() => onNavigate('saved')} />}>
       {songs.length ? (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="flex flex-col gap-3">
           {songs.map((song) => (
             <SongRow key={`${song.source}-${song.id}`} song={song} slot="home" saved={isSaved(song.id)} onSave={onSave} />
           ))}
         </div>
       ) : (
         <p className="text-sm text-muted">
-          {syncing ? 'Loading your saved songs…' : 'Save songs in chat or connect Spotify to fill this list.'}
+          {status === 'syncing' ? 'Loading your saved songs…' : 'Save songs in chat or connect Spotify to fill this list.'}
         </p>
       )}
+    </Section>
+  )
+}
 
-      <div className="mt-2 flex items-baseline justify-between gap-3">
-        <h3 className="text-[15px] font-semibold">Your playlists</h3>
-        {lists.length > 0 && <SeeAll onClick={() => onNavigate('playlists')} />}
-      </div>
+function YourPlaylists({ onNavigate, onOpenPlaylist }) {
+  const { status, playlists } = useSpotify()
+  const lists = playlists.slice(0, 4)
+  const needsSpotify = status === 'disconnected' || status === 'expired'
+
+  const empty =
+    status === 'syncing'
+      ? 'Loading your playlists…'
+      : needsSpotify
+        ? 'Connect Spotify to see your playlists here.'
+        : 'Your Spotify account doesn’t have any playlists yet.'
+
+  return (
+    <Section title="Your playlists" aside={lists.length > 0 && <SeeAll onClick={() => onNavigate('playlists')} />}>
       {lists.length ? (
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           {lists.map((p) => (
@@ -289,7 +269,7 @@ function RecentlySaved({ savedSongs, isSaved, onSave, onNavigate, onOpenPlaylist
           ))}
         </div>
       ) : (
-        <p className="text-sm text-muted">{noPlaylists}</p>
+        <p className="text-sm text-muted">{empty}</p>
       )}
     </Section>
   )
@@ -317,16 +297,10 @@ export default function HomePage({ savedSongs, isSaved, onSave, onNavigate }) {
 
       <div className="grid gap-5 lg:grid-cols-2">
         <WeekSnapshot />
-        <Picks />
+        <RecentlySaved savedSongs={savedSongs} isSaved={isSaved} onSave={onSave} onNavigate={onNavigate} />
       </div>
 
-      <RecentlySaved
-        savedSongs={savedSongs}
-        isSaved={isSaved}
-        onSave={onSave}
-        onNavigate={onNavigate}
-        onOpenPlaylist={setOpenPlaylistId}
-      />
+      <YourPlaylists onNavigate={onNavigate} onOpenPlaylist={setOpenPlaylistId} />
     </section>
   )
 }

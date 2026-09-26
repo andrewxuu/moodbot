@@ -4,9 +4,9 @@ import { setRealRatings } from './data/sampleMoods'
 const STORAGE_KEY = 'moodbot:ratings'
 const RatingsContext = createContext(null)
 
-export const ratingMood = (rating) => ['awful', 'low', 'okay', 'good', 'great'][Math.min(4, Math.floor((rating - 1) / 2))]
+export const ratingMood = (rating) => ['great', 'good', 'okay', 'low', 'awful'][Math.min(4, Math.floor((rating - 1) / 2))]
 export const stressLabel = (rating) =>
-  ['Very stressed', 'Stressed', 'Some stress', 'Relaxed', 'Calm'][Math.min(4, Math.floor((rating - 1) / 2))]
+  ['Calm', 'Relaxed', 'Some stress', 'Stressed', 'Very stressed'][Math.min(4, Math.floor((rating - 1) / 2))]
 
 const load = () => {
   try {
