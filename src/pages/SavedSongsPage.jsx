@@ -65,7 +65,7 @@ export default function SavedSongsPage({ savedSongs, isSaved, onSave }) {
       {shown.length ? (
         <div className="flex flex-col gap-2.5">
           {shown.map((song) => (
-            <SongRow key={`${song.source}-${song.id}`} song={song} variant="card" saved={isSaved(song.id)} onSave={onSave} />
+            <SongRow key={`${song.source}-${song.id}`} song={song} slot="saved" variant="card" saved={isSaved(song.id)} onSave={onSave} />
           ))}
         </div>
       ) : (

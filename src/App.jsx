@@ -6,6 +6,7 @@ import MoodPage from './pages/MoodPage'
 import SavedSongsPage from './pages/SavedSongsPage'
 import PlaylistsPage from './pages/PlaylistsPage'
 import { SpotifyProvider, useSpotify } from './spotify/useSpotify'
+import { PlayerProvider } from './spotify/usePlayer'
 
 const SAVED_KEY = 'moodbot:saved-songs'
 
@@ -25,7 +26,9 @@ export default function App() {
 
   return (
     <SpotifyProvider>
-      <Moodbot />
+      <PlayerProvider>
+        <Moodbot />
+      </PlayerProvider>
     </SpotifyProvider>
   )
 }

@@ -2,27 +2,40 @@ import { getAccessToken, logout, ReconnectError } from './auth'
 
 const BASE = 'https://api.spotify.com/v1'
 
-async function request(pathOrUrl) {
+async function request(pathOrUrl, { method = 'GET', body } = {}) {
   const token = await getAccessToken()
   if (!token) throw new ReconnectError()
 
   const url = pathOrUrl.startsWith('http') ? pathOrUrl : BASE + pathOrUrl
-  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } })
+  const res = await fetch(url, {
+    method,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      ...(body && { 'Content-Type': 'application/json' }),
+    },
+    body: body && JSON.stringify(body),
+  })
 
   if (res.status === 401) {
     logout()
     throw new ReconnectError()
   }
   if (res.status === 429) {
-    const body = await res.json().catch(() => ({}))
+    const data = await res.json().catch(() => ({}))
     throw new Error(
-      body.error?.reason === 'QUOTA_EXCEEDED'
+      data.error?.reason === 'QUOTA_EXCEEDED'
         ? 'Spotify’s usage limit for this app was reached. Try again later.'
-        : 'Spotify is busy. Wait a moment, then sync again.'
+        : 'Spotify is busy. Wait a moment, then try again.'
     )
   }
-  if (!res.ok) throw new Error(`Spotify request failed (${res.status}). Try syncing again.`)
-  return res.json()
+  if (!res.ok) {
+    const error = new Error(`Spotify request failed (${res.status}). Try again.`)
+    error.status = res.status
+    throw error
+  }
+
+  const text = await res.text()
+  return text ? JSON.parse(text) : null
 }
 
 async function collect(path, max) {
@@ -89,3 +102,4 @@ export async function getListening() {
   }
   return pool
 }
+

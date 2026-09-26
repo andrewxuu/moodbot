@@ -88,7 +88,7 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onNavigate }) {
               <ChatMessage key={msg.id} width={540} fill>
                 <p>{intro(msg)}</p>
                 {msg.songs.map((song) => (
-                  <SongRow key={song.id} song={song} saved={isSaved(song.id)} onSave={onSave} />
+                  <SongRow key={song.id} song={song} slot={`chat-${msg.id}`} saved={isSaved(song.id)} onSave={onSave} />
                 ))}
                 <div className="mt-1 flex flex-col gap-2.5">
                   <p className="flex items-center gap-1.5 text-[13px] text-muted">

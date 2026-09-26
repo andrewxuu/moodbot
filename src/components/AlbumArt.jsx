@@ -1,5 +1,27 @@
-export default function AlbumArt({ src, size = 40 }) {
+import { Play } from 'lucide-react'
+
+export default function AlbumArt({ song, size = 40, onPlay }) {
   const style = { width: size, height: size }
-  if (!src) return <div style={style} className="shrink-0 rounded-lg bg-art" />
-  return <img src={src} alt="" style={style} className="shrink-0 rounded-lg object-cover" />
+  const art = song.image ? (
+    <img src={song.image} alt="" style={style} className="rounded-lg object-cover" />
+  ) : (
+    <div style={style} className="rounded-lg bg-art" />
+  )
+
+  if (!song.uri || !onPlay) return <div className="shrink-0">{art}</div>
+
+  return (
+    <button
+      type="button"
+      aria-label={`Play ${song.title}`}
+      onClick={onPlay}
+      style={style}
+      className="group relative shrink-0 overflow-hidden rounded-lg"
+    >
+      {art}
+      <span className="absolute inset-0 flex items-center justify-center bg-ink/40 text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+        <Play size={18} fill="currentColor" />
+      </span>
+    </button>
+  )
 }
