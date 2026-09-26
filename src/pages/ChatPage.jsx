@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Music, RefreshCw, Send } from 'lucide-react'
+import ChatDayPicker from '../components/chat/ChatDayPicker'
 import ChatMessage from '../components/chat/ChatMessage'
 import Chip from '../components/ui/Chip'
 import IconButton from '../components/ui/IconButton'
@@ -10,10 +11,12 @@ import { useSpotify } from '../spotify/useSpotify'
 import { detectMood, getPicks, pickSongs } from '../picks'
 import { songs as sampleSongs } from '../data/data'
 import { moodKey, useFeedback } from '../feedback'
+import { chatDays, greetingText, loadChats, saveChat, todayKey } from '../data/sampleChats'
 
 const moods = ['Calm', 'Hype', 'Focus', 'Sad', 'Happy']
 const SAMPLE_REASON = 'Sample picks. Connect Spotify to get picks from your own listening.'
-const greeting = { id: 0, from: 'bot', text: "Hi! How are you feeling? Tell me and I'll find music for it." }
+const greeting = { id: 0, from: 'bot', text: greetingText }
+const SPOTIFY_REASON = 'Picked from your recent Spotify listening.'
 
 export default function ChatPage({ savedSongs, isSaved, onSave, onNavigate }) {
   const { listening, liked } = useSpotify()
@@ -21,16 +24,26 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onNavigate }) {
   const isSample = listening.length === 0
   const pool = isSample ? sampleSongs : listening
 
-  const [messages, setMessages] = useState([greeting])
+  const [messages, setMessages] = useState(() => loadChats()[todayKey()] ?? [greeting])
   const [draft, setDraft] = useState('')
   const [mode, setMode] = useState('Match my mood')
-  const nextId = useRef(1)
+  const [viewDay, setViewDay] = useState(todayKey)
+  const nextId = useRef(null)
   const shown = useRef({})
   const endRef = useRef(null)
+  if (nextId.current === null) nextId.current = Math.max(0, ...messages.map((m) => m.id)) + 1
+
+  const days = chatDays(pool, isSample ? SAMPLE_REASON : SPOTIFY_REASON)
+  const isToday = viewDay === todayKey()
+  const visible = isToday ? messages : (days.find((d) => d.key === viewDay)?.messages ?? [])
+
+  useEffect(() => {
+    saveChat(todayKey(), messages.filter((m) => !m.pending))
+  }, [messages])
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
-  }, [messages])
+  }, [messages, viewDay])
 
   const respond = async (mood, exclude = [], before = []) => {
     const id = nextId.current++
@@ -84,10 +97,13 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onNavigate }) {
   return (
     <div className="flex h-full">
       <section className="flex min-w-0 flex-1 flex-col items-center gap-[18px] px-10 py-8">
-        <h1 className="self-start font-serif text-[30px] font-semibold">Chat</h1>
+        <div className="flex items-center gap-3 self-start">
+          <h1 className="font-serif text-[30px] font-semibold">Chat</h1>
+          <ChatDayPicker days={days} value={viewDay} onChange={setViewDay} />
+        </div>
 
         <div className="flex w-full max-w-[700px] flex-1 flex-col gap-3.5 overflow-y-auto">
-          {messages.map((msg) => {
+          {visible.map((msg) => {
             if (msg.from === 'user') {
               return (
                 <ChatMessage key={msg.id} from="user" width={400}>
@@ -119,7 +135,7 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onNavigate }) {
                   <SongRow
                     key={song.id}
                     song={song}
-                    slot={`chat-${msg.id}`}
+                    slot={`chat-${viewDay}-${msg.id}`}
                     saved={isSaved(song.id)}
                     onSave={(s) => saveFromChat(msg, s)}
                     rating={ratingOf(msg.mood, song.id)}
@@ -132,16 +148,18 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onNavigate }) {
                     <Music size={14} className="shrink-0" />
                     {msg.reason}
                   </p>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => moreLikeThis(msg)}
-                      className="flex h-10 items-center gap-1.5 rounded-full border border-teal bg-surface px-3.5 text-sm font-semibold text-teal hover:bg-teal-soft"
-                    >
-                      <RefreshCw size={16} />
-                      More like this
-                    </button>
-                  </div>
+                  {isToday && (
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => moreLikeThis(msg)}
+                        className="flex h-10 items-center gap-1.5 rounded-full border border-teal bg-surface px-3.5 text-sm font-semibold text-teal hover:bg-teal-soft"
+                      >
+                        <RefreshCw size={16} />
+                        More like this
+                      </button>
+                    </div>
+                  )}
                 </div>
               </ChatMessage>
             )
@@ -149,26 +167,35 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onNavigate }) {
           <div ref={endRef} />
         </div>
 
-        <div className="flex w-full max-w-[700px] flex-col gap-3">
-          <div className="flex flex-wrap gap-2">
-            {moods.map((m) => (
-              <Chip key={m} onClick={() => send(m)}>
-                {m}
-              </Chip>
-            ))}
+        {!isToday ? (
+          <div className="flex w-full max-w-[700px] items-center justify-between gap-3 rounded-full border border-dashed border-line px-5 py-3">
+            <p className="text-sm text-muted">This is a past chat, so you can only view it.</p>
+            <button type="button" onClick={() => setViewDay(todayKey())} className="text-sm font-semibold text-teal hover:underline">
+              Back to today
+            </button>
           </div>
-          <SegmentedSwitch options={['Match my mood', 'Lift my mood']} value={mode} onChange={setMode} />
-          <div className="flex items-center gap-2.5">
-            <input
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && send(draft)}
-              placeholder="Tell me how you feel"
-              className="h-[52px] flex-1 rounded-full border border-line bg-surface px-[18px] text-base outline-none placeholder:text-hint focus:border-teal"
-            />
-            <IconButton icon={Send} label="Send" primary onClick={() => send(draft)} />
+        ) : (
+          <div className="flex w-full max-w-[700px] flex-col gap-3">
+            <div className="flex flex-wrap gap-2">
+              {moods.map((m) => (
+                <Chip key={m} onClick={() => send(m)}>
+                  {m}
+                </Chip>
+              ))}
+            </div>
+            <SegmentedSwitch options={['Match my mood', 'Lift my mood']} value={mode} onChange={setMode} />
+            <div className="flex items-center gap-2.5">
+              <input
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && send(draft)}
+                placeholder="Tell me how you feel"
+                className="h-[52px] flex-1 rounded-full border border-line bg-surface px-[18px] text-base outline-none placeholder:text-hint focus:border-teal"
+              />
+              <IconButton icon={Send} label="Send" primary onClick={() => send(draft)} />
+            </div>
           </div>
-        </div>
+        )}
       </section>
 
       <SavedPanel songs={savedSongs} onSeeAll={() => onNavigate('saved')} />

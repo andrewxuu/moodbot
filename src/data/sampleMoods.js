@@ -12,7 +12,7 @@ const notes = {
 export const dayKey = (date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 
-function seeded(key) {
+export function seeded(key) {
   let h = 2166136261
   for (const ch of key) h = Math.imul(h ^ ch.charCodeAt(0), 16777619)
   return () => {
