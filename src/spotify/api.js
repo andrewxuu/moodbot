@@ -57,6 +57,8 @@ const toSong = (track, source) => ({
   artist: track.artists.map((a) => a.name).join(', '),
   artistIds: track.artists.map((a) => a.id),
   image: track.album?.images?.at(-1)?.url,
+  album: track.album?.name ?? '',
+  durationMs: track.duration_ms ?? 0,
   source,
 })
 
@@ -64,7 +66,7 @@ export async function getProfile() {
   const me = await request('/me')
   const images = me.images ?? []
   const image = images.find((i) => (i.width ?? 0) >= 72) ?? images[0]
-  return { name: me.display_name || me.id, image: image?.url }
+  return { id: me.id, name: me.display_name || me.id, image: image?.url }
 }
 
 export async function getLikedSongs(max = 200) {
@@ -80,7 +82,30 @@ export async function getPlaylists(max = 100) {
     image: p.images?.[0]?.url,
     count: p.items?.total ?? p.tracks?.total ?? null,
     url: p.external_urls?.spotify,
+    ownerId: p.owner?.id,
+    collaborative: Boolean(p.collaborative),
   }))
+}
+
+export class NotOwnedError extends Error {
+  constructor() {
+    super('Spotify only shares the songs in playlists you own.')
+    this.name = 'NotOwnedError'
+  }
+}
+
+export async function getPlaylistSongs(id, max = 500) {
+  try {
+    const items = await collect(`/playlists/${id}/items?limit=50`, max)
+    return items.flatMap((entry) => {
+      const track = entry?.item ?? entry?.track
+      if (!track?.id || (track.type && track.type !== 'track')) return []
+      return [{ ...toSong(track, 'spotify'), addedAt: entry.added_at ?? null }]
+    })
+  } catch (err) {
+    if (err.status === 403 || err.status === 404) throw new NotOwnedError()
+    throw err
+  }
 }
 
 export async function getListening() {

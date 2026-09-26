@@ -4,6 +4,7 @@ import AlbumArt from './AlbumArt'
 import IconButton from './IconButton'
 import SongRow from './SongRow'
 import { usePlayer } from '../spotify/usePlayer'
+import { matchesSearch } from '../search'
 
 const COLLAPSED_KEY = 'moodbot:saved-panel-collapsed'
 const LIMIT = 11
@@ -38,8 +39,7 @@ export default function SavedPanel({ songs, onSeeAll }) {
     )
   }
 
-  const q = query.toLowerCase()
-  const shown = songs.filter((s) => `${s.title} ${s.artist}`.toLowerCase().includes(q)).slice(0, LIMIT)
+  const shown = songs.filter((s) => matchesSearch(query, s.title, s.artist, s.album)).slice(0, LIMIT)
 
   return (
     <aside

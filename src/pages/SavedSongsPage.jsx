@@ -3,6 +3,7 @@ import { Search } from 'lucide-react'
 import Chip from '../components/Chip'
 import SongRow from '../components/SongRow'
 import { useSpotify } from '../spotify/useSpotify'
+import { matchesSearch } from '../search'
 
 const filters = [
   { id: 'all', label: 'All' },
@@ -15,9 +16,8 @@ export default function SavedSongsPage({ savedSongs, isSaved, onSave }) {
   const [filter, setFilter] = useState('all')
   const [query, setQuery] = useState('')
 
-  const q = query.toLowerCase()
   const shown = savedSongs.filter(
-    (s) => (filter === 'all' || s.source === filter) && `${s.title} ${s.artist}`.toLowerCase().includes(q)
+    (s) => (filter === 'all' || s.source === filter) && matchesSearch(query, s.title, s.artist, s.album)
   )
   const needsSpotify = status === 'disconnected' || status === 'expired'
 

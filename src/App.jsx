@@ -65,7 +65,7 @@ function Moodbot() {
     chat: <ChatPage {...shared} onNavigate={setPage} />,
     mood: <MoodPage />,
     saved: <SavedSongsPage {...shared} />,
-    playlists: <PlaylistsPage />,
+    playlists: <PlaylistsPage {...shared} />,
   }
 
   return (

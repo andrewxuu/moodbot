@@ -1,8 +1,12 @@
+import { useState } from 'react'
 import { Music, Plus } from 'lucide-react'
 import { useSpotify } from '../spotify/useSpotify'
+import PlaylistDetail from './PlaylistDetail'
 
-export default function PlaylistsPage() {
+export default function PlaylistsPage({ isSaved, onSave }) {
   const { status, error, playlists, sync, connect } = useSpotify()
+  const [openId, setOpenId] = useState(null)
+  const selected = playlists.find((p) => p.id === openId)
   const syncing = status === 'syncing'
   const needsSpotify = status === 'disconnected' || status === 'expired'
 
@@ -11,7 +15,7 @@ export default function PlaylistsPage() {
       return (
         <div className="grid grid-cols-[repeat(auto-fill,260px)] gap-6">
           {playlists.map((p) => (
-            <a key={p.id} href={p.url} target="_blank" rel="noreferrer" className="block">
+            <button key={p.id} type="button" onClick={() => setOpenId(p.id)} className="block text-left">
               {p.image ? (
                 <img src={p.image} alt="" className="h-[220px] w-full rounded-[14px] object-cover" />
               ) : (
@@ -19,7 +23,7 @@ export default function PlaylistsPage() {
               )}
               <p className="mt-2 truncate text-base font-semibold">{p.name}</p>
               {p.count !== null && <p className="mt-2 text-[13px] text-muted">{p.count} songs</p>}
-            </a>
+            </button>
           ))}
         </div>
       )
@@ -27,6 +31,10 @@ export default function PlaylistsPage() {
     if (syncing) return <p className="text-[15px] text-muted">Loading your playlists…</p>
     if (needsSpotify) return <p className="text-[15px] text-muted">Connect Spotify to see your playlists here.</p>
     return <p className="text-[15px] text-muted">Your Spotify account doesn’t have any playlists yet.</p>
+  }
+
+  if (selected) {
+    return <PlaylistDetail playlist={selected} onBack={() => setOpenId(null)} isSaved={isSaved} onSave={onSave} />
   }
 
   return (
