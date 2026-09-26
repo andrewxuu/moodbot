@@ -21,7 +21,7 @@ export default function PlaylistSongRow({ song, index, saved, onSave }) {
 
   if (openKey === key) {
     return (
-      <div className="flex items-center gap-3 rounded-[14px] border border-line bg-white px-3.5 py-2.5">
+      <div className="flex items-center gap-3 rounded-[14px] border border-line bg-surface px-3.5 py-2.5">
         <SpotifyEmbed uri={song.uri} />
         <IconButton icon={X} label="Close player" onClick={close} />
       </div>
@@ -29,7 +29,7 @@ export default function PlaylistSongRow({ song, index, saved, onSave }) {
   }
 
   return (
-    <div className={`${PLAYLIST_COLUMNS} rounded-[14px] border border-line bg-white px-3.5 py-2.5`}>
+    <div className={`${PLAYLIST_COLUMNS} rounded-[14px] border border-line bg-surface px-3.5 py-2.5`}>
       <span className="text-sm text-muted">{index + 1}</span>
       <div className="flex min-w-0 items-center gap-3">
         <AlbumArt song={song} onPlay={() => open(key)} />

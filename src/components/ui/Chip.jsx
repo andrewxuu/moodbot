@@ -6,7 +6,7 @@ const sizes = {
 export default function Chip({ children, selected, onClick, size = 'md', dim = false, className = '' }) {
   const style = selected
     ? 'bg-teal-soft border-teal font-semibold'
-    : 'bg-white border-line hover:border-teal'
+    : 'bg-surface border-line hover:border-teal'
 
   return (
     <button

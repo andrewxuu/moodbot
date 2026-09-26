@@ -16,7 +16,7 @@ export default function SongRow({ song, slot = 'list', saved, onSave, showHeart 
   if (isOpen) {
     return (
       <div
-        className={`flex items-center gap-3 ${isCard ? 'rounded-[14px] border border-line bg-white px-3.5 py-2.5' : ''}`}
+        className={`flex items-center gap-3 ${isCard ? 'rounded-[14px] border border-line bg-surface px-3.5 py-2.5' : ''}`}
       >
         <SpotifyEmbed uri={song.uri} />
         <IconButton icon={X} label="Close player" onClick={close} />
@@ -37,7 +37,7 @@ export default function SongRow({ song, slot = 'list', saved, onSave, showHeart 
 
   if (isCard) {
     return (
-      <div className="flex items-center gap-4 rounded-[14px] border border-line bg-white px-3.5 py-2.5">
+      <div className="flex items-center gap-4 rounded-[14px] border border-line bg-surface px-3.5 py-2.5">
         {art}
         <div className="w-[360px] min-w-0 shrink">
           <p className="truncate text-[15px] font-semibold">{song.title}</p>

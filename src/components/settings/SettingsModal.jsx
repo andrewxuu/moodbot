@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { ChevronRight, Monitor, Moon, Music, Sun, X } from 'lucide-react'
 import Toggle from '../ui/Toggle'
 import { useSpotify } from '../../spotify/useSpotify'
+import { useTheme } from '../../theme'
 
 const themes = [
   { id: 'light', label: 'Light', icon: Sun },
@@ -37,7 +38,7 @@ export default function SettingsModal({ onClose, onLogOut }) {
   const connected = status === 'connected' || status === 'syncing'
   const closeRef = useRef(null)
 
-  const [theme, setTheme] = useState('light')
+  const { theme, setTheme } = useTheme()
   const [prefs, setPrefs] = useState({ reminder: true, suggestions: true, listening: true, chatHistory: false })
   const setPref = (key) => (value) => setPrefs((p) => ({ ...p, [key]: value }))
 
@@ -56,14 +57,14 @@ export default function SettingsModal({ onClose, onLogOut }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/45 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="settings-title"
-        className="flex max-h-[calc(100vh-32px)] w-full max-w-[560px] flex-col gap-5 overflow-y-auto rounded-[20px] bg-white p-7"
+        className="flex max-h-[calc(100vh-32px)] w-full max-w-[560px] flex-col gap-5 overflow-y-auto rounded-[20px] bg-surface p-7"
       >
         <div className="flex items-center justify-between">
           <h2 id="settings-title" className="font-serif text-[28px] font-semibold">
@@ -141,7 +142,7 @@ export default function SettingsModal({ onClose, onLogOut }) {
                   aria-checked={on}
                   onClick={() => setTheme(id)}
                   className={`flex h-9 flex-1 items-center justify-center gap-1.5 rounded-[11px] text-sm ${
-                    on ? 'border border-line bg-white font-semibold text-ink' : 'text-muted'
+                    on ? 'border border-line bg-surface font-semibold text-ink' : 'text-muted'
                   }`}
                 >
                   <Icon size={16} aria-hidden="true" />

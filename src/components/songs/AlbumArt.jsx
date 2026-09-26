@@ -19,7 +19,7 @@ export default function AlbumArt({ song, size = 40, onPlay }) {
       className="group relative shrink-0 overflow-hidden rounded-lg"
     >
       {art}
-      <span className="absolute inset-0 flex items-center justify-center bg-ink/40 text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+      <span className="absolute inset-0 flex items-center justify-center bg-black/40 text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
         <Play size={18} fill="currentColor" />
       </span>
     </button>

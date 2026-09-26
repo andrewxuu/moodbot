@@ -25,7 +25,7 @@ export default function MoodCalendar({ monthStart }) {
             const { date, future, checkIn } = cell
             const day = date.getDate()
             const isToday = date.getTime() === today.getTime()
-            const ring = isToday ? 'ring-2 ring-ink ring-offset-2' : ''
+            const ring = isToday ? 'ring-2 ring-ink ring-offset-2 ring-offset-surface' : ''
             const name = date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })
 
             if (checkIn) {

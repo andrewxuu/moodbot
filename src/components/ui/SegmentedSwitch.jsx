@@ -18,7 +18,7 @@ export default function SegmentedSwitch({ options, value, onChange, size = 'md' 
             aria-checked={on}
             onClick={() => onChange(opt)}
             className={`flex items-center justify-center rounded-full ${s.item} ${
-              on ? 'border border-line bg-white font-semibold text-ink' : 'text-muted'
+              on ? 'border border-line bg-surface font-semibold text-ink' : 'text-muted'
             }`}
           >
             {opt}

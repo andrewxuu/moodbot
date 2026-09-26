@@ -13,7 +13,7 @@ export default function Sidebar({ page, onNavigate, onOpenSettings }) {
   const name = profile?.name ?? 'Guest'
 
   return (
-    <aside className="flex h-full w-[248px] shrink-0 flex-col gap-7 overflow-y-auto border-r border-line bg-white px-[18px] py-7">
+    <aside className="flex h-full w-[248px] shrink-0 flex-col gap-7 overflow-y-auto border-r border-line bg-surface px-[18px] py-7">
       <div className="flex items-center gap-2.5">
         <div className="flex size-9 items-center justify-center rounded-full bg-teal text-white">
           <Music size={18} />

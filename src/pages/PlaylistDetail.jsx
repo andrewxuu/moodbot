@@ -102,7 +102,7 @@ export default function PlaylistDetail({ playlist, onBack, isSaved, onSave }) {
       </div>
 
       {state.status === 'ready' && state.songs.length > 0 && (
-        <label className="flex h-12 w-full max-w-[420px] items-center gap-2.5 rounded-[14px] border border-line bg-white px-3.5">
+        <label className="flex h-12 w-full max-w-[420px] items-center gap-2.5 rounded-[14px] border border-line bg-surface px-3.5">
           <Search size={18} className="text-teal" />
           <input
             value={query}

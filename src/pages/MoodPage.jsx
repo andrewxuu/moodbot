@@ -97,7 +97,7 @@ export default function MoodPage() {
       </div>
 
       <div className="flex">
-        <div className="flex min-w-0 flex-1 flex-col gap-3 rounded-[14px] border border-line bg-white p-4">
+        <div className="flex min-w-0 flex-1 flex-col gap-3 rounded-[14px] border border-line bg-surface p-4">
           <div className="flex items-center justify-between">
             <PeriodNav
               title={period.title}

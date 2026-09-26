@@ -44,7 +44,7 @@ export default function SavedSongsPage({ savedSongs, isSaved, onSave }) {
       <h1 className="font-serif text-[30px] font-semibold">Saved songs</h1>
 
       <div className="flex flex-wrap items-center gap-4">
-        <label className="flex h-12 w-[420px] items-center gap-2.5 rounded-[14px] border border-line bg-white px-3.5">
+        <label className="flex h-12 w-[420px] items-center gap-2.5 rounded-[14px] border border-line bg-surface px-3.5">
           <Search size={18} className="text-teal" />
           <input
             value={query}

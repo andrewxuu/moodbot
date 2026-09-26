@@ -1,5 +1,13 @@
 import { dayTip, useChartTooltip, weekTip } from '../ui/ChartTooltip'
-import { buildWeeks, moodHex, moodLabel, scoreMood, startOfToday, weekAverage } from '../../lib/moodMonth'
+import { buildWeeks, moodLabel, scoreMood, startOfToday, weekAverage } from '../../lib/moodMonth'
+
+const moodFill = {
+  great: 'fill-mood-great',
+  good: 'fill-mood-good',
+  okay: 'fill-mood-okay',
+  low: 'fill-mood-low',
+  awful: 'fill-mood-awful',
+}
 
 const W = 720
 const H = 220
@@ -22,14 +30,14 @@ export default function MoodDaily({ monthStart }) {
     <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label="Daily moods with weekly average line">
       {[1, 2, 3, 4, 5].map((score) => (
         <g key={score}>
-          <line x1={LEFT} x2={W} y1={y(score)} y2={y(score)} stroke="#eae5d8" strokeWidth="1" />
-          <text x="0" y={y(score) + 4} fontSize="11" fill="#5b5850">
+          <line x1={LEFT} x2={W} y1={y(score)} y2={y(score)} strokeWidth="1" className="stroke-track" />
+          <text x="0" y={y(score) + 4} fontSize="11" className="fill-muted">
             {moodLabel(scoreMood[score])}
           </text>
         </g>
       ))}
 
-      <line x1={LEFT} x2={W} y1={y(0)} y2={y(0)} stroke="#d9d4c7" strokeWidth="1" />
+      <line x1={LEFT} x2={W} y1={y(0)} y2={y(0)} strokeWidth="1" className="stroke-line" />
 
       {days.map(({ date, checkIn }) => {
         if (!checkIn) return null
@@ -42,7 +50,7 @@ export default function MoodDaily({ monthStart }) {
             width={Math.max(2, slot - 2)}
             height={y(0) - top}
             rx="3"
-            fill={moodHex[checkIn.mood]}
+            className={moodFill[checkIn.mood]}
             opacity="0.85"
           />
         )
@@ -72,8 +80,8 @@ export default function MoodDaily({ monthStart }) {
         const x2 = x(inMonth.at(-1).date.getDate()) + slot - 2
         return (
           <g key={i}>
-            <line x1={x1} x2={x2} y1={y(avg)} y2={y(avg)} stroke="#1e1d1a" strokeWidth="2" strokeLinecap="round" />
-            <circle cx={x2} cy={y(avg)} r="4" fill="#1e1d1a" stroke="#fff" strokeWidth="2" />
+            <line x1={x1} x2={x2} y1={y(avg)} y2={y(avg)} strokeWidth="2" strokeLinecap="round" className="stroke-ink" />
+            <circle cx={x2} cy={y(avg)} r="4" strokeWidth="2" className="fill-ink stroke-surface" />
             <circle
               cx={x2}
               cy={y(avg)}
@@ -90,7 +98,7 @@ export default function MoodDaily({ monthStart }) {
       })}
 
       {ticks.map((d) => (
-        <text key={d} x={x(d) + slot / 2} y={H - 6} fontSize="11" fill="#5b5850" textAnchor="middle">
+        <text key={d} x={x(d) + slot / 2} y={H - 6} fontSize="11" textAnchor="middle" className="fill-muted">
           {d}
         </text>
       ))}

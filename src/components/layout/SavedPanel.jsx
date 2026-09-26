@@ -22,7 +22,7 @@ export default function SavedPanel({ songs, onSeeAll }) {
     return (
       <aside
         aria-label="Saved songs"
-        className="flex h-full w-16 shrink-0 flex-col items-center gap-3 overflow-y-auto border-l border-line bg-white py-8"
+        className="flex h-full w-16 shrink-0 flex-col items-center gap-3 overflow-y-auto border-l border-line bg-surface py-8"
       >
         <IconButton icon={PanelRightOpen} label="Show saved songs" size={40} onClick={() => setCollapsed(false)} />
         {songs.slice(0, LIMIT).map((song) => (
@@ -44,7 +44,7 @@ export default function SavedPanel({ songs, onSeeAll }) {
   return (
     <aside
       aria-label="Saved songs"
-      className="flex h-full w-[400px] shrink-0 flex-col gap-4 border-l border-line bg-white px-6 py-8"
+      className="flex h-full w-[400px] shrink-0 flex-col gap-4 border-l border-line bg-surface px-6 py-8"
     >
       <div className="flex items-center gap-3">
         <p className="flex-1 text-lg font-semibold">Saved songs</p>

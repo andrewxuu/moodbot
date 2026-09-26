@@ -45,7 +45,7 @@ export default function PlaylistsPage({ isSaved, onSave }) {
           <button
             type="button"
             onClick={needsSpotify ? connect : sync}
-            className="flex h-11 items-center gap-1.5 rounded-full border border-line bg-white px-[18px] text-[15px] hover:border-teal"
+            className="flex h-11 items-center gap-1.5 rounded-full border border-line bg-surface px-[18px] text-[15px] hover:border-teal"
           >
             <Music size={18} className="text-teal" />
             {syncing ? 'Syncing…' : needsSpotify ? 'Connect Spotify' : 'Sync to Spotify'}

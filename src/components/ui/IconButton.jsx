@@ -1,7 +1,7 @@
 export default function IconButton({ icon: Icon, label, size = 44, iconSize = 18, active, primary, onClick }) {
   const style = primary
     ? 'bg-teal text-white'
-    : 'bg-white border border-line text-teal hover:bg-teal-soft'
+    : 'bg-surface border border-line text-teal hover:bg-teal-soft'
 
   return (
     <button

@@ -5,7 +5,7 @@ const Dot = ({ mood }) => <span className={`size-2.5 shrink-0 rounded-full ${moo
 
 function Card({ label, children, sub }) {
   return (
-    <div className="flex min-w-0 flex-col rounded-[14px] border border-line bg-white px-3.5 py-3">
+    <div className="flex min-w-0 flex-col rounded-[14px] border border-line bg-surface px-3.5 py-3">
       <p className="text-[13px] text-muted">{label}</p>
       <div className="mt-1 flex min-w-0 items-center gap-1.5 truncate text-lg font-semibold">{children}</div>
       <div className="mt-1 flex items-center gap-1 text-xs text-muted">{sub}</div>

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Sidebar from './components/layout/Sidebar'
 import SettingsModal from './components/settings/SettingsModal'
+import { ThemeProvider } from './theme'
 import CallbackPage from './pages/CallbackPage'
 import ChatPage from './pages/ChatPage'
 import MoodPage from './pages/MoodPage'
@@ -27,13 +28,15 @@ export default function App() {
   if (path === '/callback') return <CallbackPage onDone={finishLogin} />
 
   return (
-    <SpotifyProvider>
-      <PlayerProvider>
-        <FeedbackProvider>
-          <Moodbot />
-        </FeedbackProvider>
-      </PlayerProvider>
-    </SpotifyProvider>
+    <ThemeProvider>
+      <SpotifyProvider>
+        <PlayerProvider>
+          <FeedbackProvider>
+            <Moodbot />
+          </FeedbackProvider>
+        </PlayerProvider>
+      </SpotifyProvider>
+    </ThemeProvider>
   )
 }
 

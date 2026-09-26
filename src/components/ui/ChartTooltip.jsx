@@ -53,17 +53,17 @@ export function useChartTooltip() {
     <div
       role="tooltip"
       style={{ left: Math.min(Math.max(tip.x, 110), tip.width - 110), top: tip.y }}
-      className="pointer-events-none absolute z-10 w-[200px] -translate-x-1/2 -translate-y-[calc(100%+10px)] rounded-[10px] bg-ink px-3 py-2 text-xs text-white shadow-lg"
+      className="pointer-events-none absolute z-10 w-[200px] -translate-x-1/2 -translate-y-[calc(100%+10px)] rounded-[10px] bg-ink px-3 py-2 text-xs text-surface shadow-lg"
     >
       <p className="font-semibold">{tip.content.title}</p>
       {tip.content.mood && (
         <p className="mt-1 flex items-center gap-1.5">
-          <span className={`size-2.5 shrink-0 rounded-full ring-1 ring-white/60 ${moodBg[tip.content.mood]}`} />
+          <span className={`size-2.5 shrink-0 rounded-full ring-1 ring-surface/60 ${moodBg[tip.content.mood]}`} />
           {tip.content.moodText}
         </p>
       )}
-      {tip.content.note && <p className="mt-1 text-white/80">“{tip.content.note}”</p>}
-      {tip.content.meta && <p className="mt-1 text-white/70">{tip.content.meta}</p>}
+      {tip.content.note && <p className="mt-1 text-surface/80">“{tip.content.note}”</p>}
+      {tip.content.meta && <p className="mt-1 text-surface/70">{tip.content.meta}</p>}
     </div>
   )
 

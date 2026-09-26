@@ -37,7 +37,7 @@ function MoodFilter({ value, onChange, counts, total }) {
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
         className={`flex h-9 items-center gap-1.5 rounded-full border px-3 text-sm ${
-          active ? 'border-teal bg-teal-soft font-semibold text-teal' : 'border-line bg-white text-ink hover:border-teal'
+          active ? 'border-teal bg-teal-soft font-semibold text-teal' : 'border-line bg-surface text-ink hover:border-teal'
         }`}
       >
         <Funnel size={15} aria-hidden="true" />
@@ -46,7 +46,7 @@ function MoodFilter({ value, onChange, counts, total }) {
       </button>
 
       {open && (
-        <div role="menu" className="absolute right-0 top-full z-20 mt-2 w-[200px] rounded-xl border border-line bg-white p-1.5 shadow-lg">
+        <div role="menu" className="absolute right-0 top-full z-20 mt-2 w-[200px] rounded-xl border border-line bg-surface p-1.5 shadow-lg">
           {options.map((o) => {
             const selected = value === o.id
             const empty = o.id !== 'all' && !o.count
@@ -94,7 +94,7 @@ export default function CheckInList({ title, checkIns, periodKey }) {
       </div>
 
       {shown.map((c) => (
-        <div key={c.id} className="flex h-[60px] items-center gap-3 rounded-[14px] border border-line bg-white px-3.5">
+        <div key={c.id} className="flex h-[60px] items-center gap-3 rounded-[14px] border border-line bg-surface px-3.5">
           <span className={`size-3.5 shrink-0 rounded-full ${moodBg[c.mood]}`} />
           <div className="min-w-0 flex-1">
             <p className="text-[15px] font-semibold">{moodLabel(c.mood)}</p>

@@ -4,6 +4,44 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  color-scheme: light;
+  --c-cream: 244 241 234;
+  --c-surface: 255 255 255;
+  --c-line: 217 212 199;
+  --c-track: 234 229 216;
+  --c-ink: 30 29 26;
+  --c-muted: 91 88 80;
+  --c-hint: 138 138 138;
+  --c-art: 214 222 232;
+  --c-teal: 47 111 106;
+  --c-teal-soft: 230 239 236;
+  --c-mood-great: 28 74 134;
+  --c-mood-good: 74 138 224;
+  --c-mood-okay: 132 129 122;
+  --c-mood-low: 217 122 34;
+  --c-mood-awful: 179 50 42;
+}
+
+:root.dark {
+  color-scheme: dark;
+  --c-cream: 21 20 19;
+  --c-surface: 31 30 28;
+  --c-line: 58 56 52;
+  --c-track: 43 42 39;
+  --c-ink: 236 232 223;
+  --c-muted: 168 163 151;
+  --c-hint: 124 120 111;
+  --c-art: 51 55 61;
+  --c-teal: 70 158 149;
+  --c-teal-soft: 31 52 50;
+  --c-mood-great: 79 96 220;
+  --c-mood-good: 74 156 220;
+  --c-mood-okay: 122 119 111;
+  --c-mood-low: 201 129 42;
+  --c-mood-awful: 195 48 74;
+}
+
 body {
   @apply bg-cream font-sans text-ink;
 }

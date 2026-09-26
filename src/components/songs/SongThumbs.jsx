@@ -6,7 +6,7 @@ export default function SongThumbs({ song, rating, onRate }) {
   const toggle = (value) => onRate(rating === value ? null : value)
 
   return (
-    <div role="group" aria-label={`Rate ${song.title}`} className="flex shrink-0 overflow-hidden rounded-full border border-line bg-white">
+    <div role="group" aria-label={`Rate ${song.title}`} className="flex shrink-0 overflow-hidden rounded-full border border-line bg-surface">
       <button
         type="button"
         aria-label="More like this song"

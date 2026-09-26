@@ -7,7 +7,6 @@ export const moodBg = {
   low: 'bg-mood-low',
   awful: 'bg-mood-awful',
 }
-export const moodHex = { great: '#1c4a86', good: '#4a8ae0', okay: '#84817a', low: '#d97a22', awful: '#b3322a' }
 export const scoreMood = ['', 'awful', 'low', 'okay', 'good', 'great']
 export const moodLabel = (m) => m[0].toUpperCase() + m.slice(1)
 

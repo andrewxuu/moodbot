@@ -136,7 +136,7 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onNavigate }) {
                     <button
                       type="button"
                       onClick={() => moreLikeThis(msg)}
-                      className="flex h-10 items-center gap-1.5 rounded-full border border-teal bg-white px-3.5 text-sm font-semibold text-teal hover:bg-teal-soft"
+                      className="flex h-10 items-center gap-1.5 rounded-full border border-teal bg-surface px-3.5 text-sm font-semibold text-teal hover:bg-teal-soft"
                     >
                       <RefreshCw size={16} />
                       More like this
@@ -164,7 +164,7 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onNavigate }) {
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && send(draft)}
               placeholder="Tell me how you feel"
-              className="h-[52px] flex-1 rounded-full border border-line bg-white px-[18px] text-base outline-none placeholder:text-hint focus:border-teal"
+              className="h-[52px] flex-1 rounded-full border border-line bg-surface px-[18px] text-base outline-none placeholder:text-hint focus:border-teal"
             />
             <IconButton icon={Send} label="Send" primary onClick={() => send(draft)} />
           </div>
