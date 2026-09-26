@@ -1,5 +1,4 @@
 import { Heart, List, MessageCircle, Music, Smile } from 'lucide-react'
-import SpotifyStatus from './SpotifyStatus'
 import { useSpotify } from '../../spotify/useSpotify'
 
 const links = [
@@ -9,7 +8,7 @@ const links = [
   { id: 'playlists', label: 'Playlists', icon: List },
 ]
 
-export default function Sidebar({ page, onNavigate }) {
+export default function Sidebar({ page, onNavigate, onOpenSettings }) {
   const { profile } = useSpotify()
   const name = profile?.name ?? 'Guest'
 
@@ -44,9 +43,12 @@ export default function Sidebar({ page, onNavigate }) {
 
       <div className="flex-1" />
 
-      <SpotifyStatus />
-
-      <button type="button" className="flex items-center gap-2.5 text-left">
+      <button
+        type="button"
+        onClick={onOpenSettings}
+        aria-haspopup="dialog"
+        className="-mx-2 flex items-center gap-2.5 rounded-[14px] px-2 py-1.5 text-left hover:bg-cream"
+      >
         {profile?.image ? (
           <img src={profile.image} alt="" className="size-9 shrink-0 rounded-full object-cover" />
         ) : (

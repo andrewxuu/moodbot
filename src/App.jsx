@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Sidebar from './components/layout/Sidebar'
+import SettingsModal from './components/settings/SettingsModal'
 import CallbackPage from './pages/CallbackPage'
 import ChatPage from './pages/ChatPage'
 import MoodPage from './pages/MoodPage'
@@ -37,7 +38,14 @@ export default function App() {
 }
 
 function Moodbot() {
-  const { liked } = useSpotify()
+  const { liked, disconnect } = useSpotify()
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const closeSettings = useCallback(() => setSettingsOpen(false), [])
+  const logOut = () => {
+    disconnect()
+    setSettingsOpen(false)
+    setPage('chat')
+  }
   const [page, setPage] = useState('chat')
   const [chatSaved, setChatSaved] = useState(loadSaved)
 
@@ -70,8 +78,9 @@ function Moodbot() {
 
   return (
     <div className="flex h-screen bg-cream">
-      <Sidebar page={page} onNavigate={setPage} />
+      <Sidebar page={page} onNavigate={setPage} onOpenSettings={() => setSettingsOpen(true)} />
       <main className="min-w-0 flex-1 overflow-y-auto">{pages[page]}</main>
+      {settingsOpen && <SettingsModal onClose={closeSettings} onLogOut={logOut} />}
     </div>
   )
 }
