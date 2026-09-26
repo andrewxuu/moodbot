@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { ChevronRight, Monitor, Moon, Music, Sun, X } from 'lucide-react'
+import GenrePrefs from './GenrePrefs'
 import Toggle from '../ui/Toggle'
 import { useSpotify } from '../../spotify/useSpotify'
 import { useTheme } from '../../theme'
@@ -151,6 +152,10 @@ export default function SettingsModal({ onClose, onLogOut }) {
               )
             })}
           </div>
+        </Group>
+
+        <Group title="Music preferences">
+          <GenrePrefs />
         </Group>
 
         <Group title="Notifications">
