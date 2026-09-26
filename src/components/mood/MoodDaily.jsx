@@ -1,4 +1,5 @@
-import { buildWeeks, moodHex, moodLabel, scoreMood, startOfToday, weekAverage } from '../moodMonth'
+import { dayTip, useChartTooltip, weekTip } from '../ui/ChartTooltip'
+import { buildWeeks, moodHex, moodLabel, scoreMood, startOfToday, weekAverage } from '../../lib/moodMonth'
 
 const W = 720
 const H = 220
@@ -14,8 +15,10 @@ export default function MoodDaily({ monthStart }) {
   const slot = (W - LEFT) / days.length
   const x = (day) => LEFT + (day - 1) * slot
   const ticks = [1, 8, 15, 22, 29].filter((d) => d <= days.length)
+  const { ref, bind, tooltip } = useChartTooltip()
 
   return (
+    <div ref={ref} className="relative">
     <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label="Daily moods with weekly average line">
       {[1, 2, 3, 4, 5].map((score) => (
         <g key={score}>
@@ -41,11 +44,25 @@ export default function MoodDaily({ monthStart }) {
             rx="3"
             fill={moodHex[checkIn.mood]}
             opacity="0.85"
-          >
-            <title>{`${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}: ${moodLabel(checkIn.mood)}`}</title>
-          </rect>
+          />
         )
       })}
+
+      {days.map(({ date, checkIn, future }) => (
+        <rect
+          key={`hit-${date.getDate()}`}
+          x={x(date.getDate())}
+          y={TOP}
+          width={slot}
+          height={y(0) - TOP}
+          fill="transparent"
+          tabIndex={future ? -1 : 0}
+          role="button"
+          aria-label={`${date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}: ${checkIn ? moodLabel(checkIn.mood) : future ? 'upcoming' : 'no check-in'}`}
+          className="cursor-pointer outline-none hover:fill-ink/5 focus-visible:fill-teal/10"
+          {...bind(dayTip(date, checkIn, future))}
+        />
+      ))}
 
       {weeks.map((week, i) => {
         const avg = weekAverage(week)
@@ -56,9 +73,18 @@ export default function MoodDaily({ monthStart }) {
         return (
           <g key={i}>
             <line x1={x1} x2={x2} y1={y(avg)} y2={y(avg)} stroke="#1e1d1a" strokeWidth="2" strokeLinecap="round" />
-            <circle cx={x2} cy={y(avg)} r="4" fill="#1e1d1a" stroke="#fff" strokeWidth="2">
-              <title>{`Week ${i + 1} average: ${avg.toFixed(1)}`}</title>
-            </circle>
+            <circle cx={x2} cy={y(avg)} r="4" fill="#1e1d1a" stroke="#fff" strokeWidth="2" />
+            <circle
+              cx={x2}
+              cy={y(avg)}
+              r="11"
+              fill="transparent"
+              tabIndex={0}
+              role="button"
+              aria-label={`Week ${i + 1} average ${avg.toFixed(1)}`}
+              className="cursor-pointer outline-none focus-visible:stroke-teal focus-visible:[stroke-width:2]"
+              {...bind(weekTip(i, week.filter(Boolean), avg, week.filter((c) => c?.checkIn).length))}
+            />
           </g>
         )
       })}
@@ -69,5 +95,7 @@ export default function MoodDaily({ monthStart }) {
         </text>
       ))}
     </svg>
+    {tooltip}
+    </div>
   )
 }

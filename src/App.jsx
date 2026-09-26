@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import Sidebar from './components/Sidebar'
+import Sidebar from './components/layout/Sidebar'
 import CallbackPage from './pages/CallbackPage'
 import ChatPage from './pages/ChatPage'
 import MoodPage from './pages/MoodPage'

@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { ArrowLeft, Clock, ExternalLink, Search } from 'lucide-react'
-import PlaylistSongRow, { PLAYLIST_COLUMNS } from '../components/PlaylistSongRow'
+import PlaylistSongRow, { PLAYLIST_COLUMNS } from '../components/songs/PlaylistSongRow'
 import { getPlaylistSongs, NotOwnedError } from '../spotify/api'
 import { useSpotify } from '../spotify/useSpotify'
-import { matchesSearch } from '../search'
+import { matchesSearch } from '../lib/search'
 
 const cache = new Map()
 

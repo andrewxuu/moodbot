@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { PanelRightClose, PanelRightOpen, Search } from 'lucide-react'
 import AlbumArt from '../songs/AlbumArt'
-import IconButton from './IconButton'
-import SongRow from '../SongRow'
+import IconButton from '../ui/IconButton'
+import SongRow from '../songs/SongRow'
 import { usePlayer } from '../../spotify/usePlayer'
 import { matchesSearch } from '../../lib/search'
 

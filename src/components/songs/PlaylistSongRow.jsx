@@ -1,6 +1,6 @@
 import { Heart, X } from 'lucide-react'
 import AlbumArt from './AlbumArt'
-import IconButton from './IconButton'
+import IconButton from '../ui/IconButton'
 import SpotifyEmbed from './SpotifyEmbed'
 import { usePlayer } from '../../spotify/usePlayer'
 

@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { Search } from 'lucide-react'
-import Chip from '../components/Chip'
-import SongRow from '../components/SongRow'
+import Chip from '../components/ui/Chip'
+import SongRow from '../components/songs/SongRow'
 import { useSpotify } from '../spotify/useSpotify'
-import { matchesSearch } from '../search'
+import { matchesSearch } from '../lib/search'
 
 const filters = [
   { id: 'all', label: 'All' },

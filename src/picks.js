@@ -1,7 +1,7 @@
-import { getAudioFeatures } from './reccobeats'
+import { getAudioFeatures } from './services/reccobeats'
 import { searchTrack } from './spotify/api'
 import { FILTERS, firstArtist, libraryProfile, passesLanguage, songKey } from './lib/filters'
-import { getArtistTopTracks, getSimilarArtists, getSimilarTracks, isLastfmConfigured } from './lastfm'
+import { getArtistTopTracks, getSimilarArtists, getSimilarTracks, isLastfmConfigured } from './services/lastfm'
 
 const moodWords = {
   Calm: ['calm', 'chill', 'relax', 'tired', 'long day', 'peace', 'slow'],

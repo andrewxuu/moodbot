@@ -1,9 +1,9 @@
 import { Heart, Plus, X } from 'lucide-react'
-import AlbumArt from './songs/AlbumArt'
-import IconButton from './IconButton'
+import AlbumArt from './AlbumArt'
+import IconButton from '../ui/IconButton'
 import SongThumbs from './SongThumbs'
 import SpotifyEmbed from './SpotifyEmbed'
-import { usePlayer } from '../spotify/usePlayer'
+import { usePlayer } from '../../spotify/usePlayer'
 
 const sourceLabel = { chat: 'From chat', spotify: 'From Spotify' }
 

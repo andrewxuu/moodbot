@@ -1,5 +1,5 @@
 import { Music } from 'lucide-react'
-import { useSpotify } from '../spotify/useSpotify'
+import { useSpotify } from '../../spotify/useSpotify'
 
 const pill = 'inline-flex h-8 items-center gap-2 self-start rounded-full border px-3 text-[13px]'
 

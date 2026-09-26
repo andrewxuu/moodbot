@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import MoodCalendar from '../components/MoodCalendar'
-import MoodDaily from '../components/MoodDaily'
-import MoodWeeks from '../components/MoodWeeks'
+import MoodCalendar from '../components/mood/MoodCalendar'
+import MoodDaily from '../components/mood/MoodDaily'
+import MoodWeekChart from '../components/mood/MoodWeekChart'
+import MoodWeeks from '../components/mood/MoodWeeks'
 import SegmentedSwitch from '../components/ui/SegmentedSwitch'
 import { moodLevels } from '../data/data'
 import { checkInsBetween, daysBetween, sampleCheckIn, whenLabel } from '../data/sampleMoods'
@@ -103,34 +104,7 @@ export default function MoodPage() {
             </div>
           </div>
           {range === 'Week' ? (
-            <>
-          <div className="flex h-[220px] items-end gap-2.5">
-            {week.map(({ date, checkIn }) =>
-              checkIn ? (
-                <div
-                  key={date.toISOString()}
-                  title={label(checkIn.mood)}
-                  style={{ height: checkIn.score * 44 }}
-                  className={`flex-1 rounded-md ${moodBg[checkIn.mood]}`}
-                />
-              ) : (
-                <div
-                  key={date.toISOString()}
-                  className="flex h-[44px] flex-1 items-center justify-center rounded-md border border-dashed border-line text-[11px] text-hint"
-                >
-                  No check-in
-                </div>
-              )
-            )}
-          </div>
-          <div className="flex gap-2.5 text-center text-xs text-muted">
-            {week.map(({ date }) => (
-              <p key={date.toISOString()} className="flex-1">
-                {date.toLocaleDateString('en-US', { weekday: 'short' })}
-              </p>
-            ))}
-          </div>
-            </>
+            <MoodWeekChart days={week} />
           ) : (
             <>
               {monthView === 'Weeks' && <MoodWeeks monthStart={period.start} />}
