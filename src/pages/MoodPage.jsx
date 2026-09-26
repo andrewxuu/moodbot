@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import MoodCalendar from '../components/MoodCalendar'
 import SegmentedSwitch from '../components/SegmentedSwitch'
 import { moodLevels } from '../data'
 import { checkInsBetween, daysBetween, sampleCheckIn, whenLabel } from '../sampleMoods'
@@ -123,9 +124,7 @@ export default function MoodPage() {
           </div>
             </>
           ) : (
-            <div className="flex h-[252px] items-center justify-center rounded-md border border-dashed border-line text-sm text-muted">
-              {period.title} chart comes in the next step
-            </div>
+            <MoodCalendar monthStart={period.start} />
           )}
           <div className="flex gap-3 text-xs text-muted">
             {moodLevels.map((m) => (
