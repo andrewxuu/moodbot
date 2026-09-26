@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import MoodCalendar from '../components/MoodCalendar'
+import MoodDaily from '../components/MoodDaily'
+import MoodWeeks from '../components/MoodWeeks'
 import SegmentedSwitch from '../components/SegmentedSwitch'
 import { moodLevels } from '../data'
 import { checkInsBetween, daysBetween, sampleCheckIn, whenLabel } from '../sampleMoods'
@@ -61,6 +63,7 @@ const stats = [
 export default function MoodPage() {
   const [range, setRange] = useState('Week')
   const [offset, setOffset] = useState(0)
+  const [monthView, setMonthView] = useState('Calendar')
   const today = new Date()
   const period = periodFor(range, offset, today)
   const week = daysBetween(period.start, period.end).map((date) => ({ date, checkIn: sampleCheckIn(date, today) }))
@@ -92,7 +95,12 @@ export default function MoodPage() {
               onNext={() => setOffset((o) => o + 1)}
               canGoNext={offset < 0}
             />
-            <p className="text-xs text-muted">Sample data</p>
+            <div className="flex items-center gap-3">
+              {range === 'Month' && (
+                <SegmentedSwitch size="sm" options={['Weeks', 'Calendar', 'Daily']} value={monthView} onChange={setMonthView} />
+              )}
+              <p className="text-xs text-muted">Sample data</p>
+            </div>
           </div>
           {range === 'Week' ? (
             <>
@@ -124,7 +132,11 @@ export default function MoodPage() {
           </div>
             </>
           ) : (
-            <MoodCalendar monthStart={period.start} />
+            <>
+              {monthView === 'Weeks' && <MoodWeeks monthStart={period.start} />}
+              {monthView === 'Calendar' && <MoodCalendar monthStart={period.start} />}
+              {monthView === 'Daily' && <MoodDaily monthStart={period.start} />}
+            </>
           )}
           <div className="flex gap-3 text-xs text-muted">
             {moodLevels.map((m) => (
@@ -133,6 +145,12 @@ export default function MoodPage() {
                 {label(m)}
               </span>
             ))}
+            {range === 'Month' && monthView === 'Daily' && (
+              <span className="flex items-center gap-1">
+                <span className="h-0.5 w-4 rounded-full bg-ink" />
+                Weekly average
+              </span>
+            )}
           </div>
         </div>
 

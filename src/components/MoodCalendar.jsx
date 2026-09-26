@@ -1,41 +1,9 @@
-import { sampleCheckIn } from '../sampleMoods'
+import { buildWeeks, moodBg, moodLabel as label, scoreMood, startOfToday, weekAverage, weekIsUpcoming } from '../moodMonth'
 
-const moodBg = {
-  great: 'bg-mood-great',
-  good: 'bg-mood-good',
-  okay: 'bg-mood-okay',
-  low: 'bg-mood-low',
-  awful: 'bg-mood-awful',
-}
-const scoreMood = ['', 'awful', 'low', 'okay', 'good', 'great']
 const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-const label = (m) => m[0].toUpperCase() + m.slice(1)
-
-function buildWeeks(monthStart, today) {
-  const year = monthStart.getFullYear()
-  const month = monthStart.getMonth()
-  const lastDay = new Date(year, month + 1, 0).getDate()
-  const cells = Array.from({ length: monthStart.getDay() }, () => null)
-
-  for (let d = 1; d <= lastDay; d++) {
-    const date = new Date(year, month, d)
-    cells.push({ date, future: date > today, checkIn: sampleCheckIn(date, today) })
-  }
-  while (cells.length % 7) cells.push(null)
-
-  const weeks = []
-  for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7))
-  return weeks
-}
-
-const weekAverage = (week) => {
-  const scores = week.filter((c) => c?.checkIn).map((c) => c.checkIn.score)
-  return scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : null
-}
 
 export default function MoodCalendar({ monthStart }) {
-  const now = new Date()
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const today = startOfToday()
   const weeks = buildWeeks(monthStart, today)
 
   return (
@@ -88,7 +56,7 @@ export default function MoodCalendar({ monthStart }) {
                 <span className="tabular-nums text-ink">{avg.toFixed(1)}</span>
               </>
             ) : (
-              <span className="text-hint">{week.some((c) => c && !c.future) ? 'None' : 'Upcoming'}</span>
+              <span className="text-hint">{weekIsUpcoming(week) ? 'Upcoming' : 'None'}</span>
             )}
           </div>,
         ]
