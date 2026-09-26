@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { CircleCheck } from 'lucide-react'
 import { moodBg } from '../lib/moodMonth'
 import { ratingMood, stressLabel, useRatings } from '../ratings'
+import SongRow from '../components/songs/SongRow'
+import PlaylistDetail from './PlaylistDetail'
 
 function greetingFor(hour) {
   if (hour < 5) return 'Up late'
@@ -17,7 +19,7 @@ function Section({ title, aside, children, className = '' }) {
     <section className={`flex flex-col gap-3 rounded-[14px] border border-line bg-surface p-4 ${className}`}>
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="text-[15px] font-semibold">{title}</h2>
-        {aside && <p className="text-[13px] text-muted">{aside}</p>}
+        {aside && <div className="text-[13px] text-muted">{aside}</div>}
       </div>
       {children}
     </section>
@@ -233,33 +235,76 @@ function Picks() {
   )
 }
 
-function RecentlySaved() {
+function SeeAll({ onClick }) {
   return (
-    <Section title="Recently saved">
-      <div className="grid gap-3 sm:grid-cols-2">
-        <SongPlaceholder />
-        <SongPlaceholder />
-        <SongPlaceholder />
-        <SongPlaceholder />
+    <button type="button" onClick={onClick} className="text-[13px] font-semibold text-teal hover:underline">
+      See all
+    </button>
+  )
+}
+
+function RecentlySaved({ savedSongs, isSaved, onSave, onNavigate, onOpenPlaylist }) {
+  const { status, playlists } = useSpotify()
+  const songs = savedSongs.slice(0, 4)
+  const lists = playlists.slice(0, 4)
+  const syncing = status === 'syncing'
+  const needsSpotify = status === 'disconnected' || status === 'expired'
+
+  const noPlaylists = syncing
+    ? 'Loading your playlists…'
+    : needsSpotify
+      ? 'Connect Spotify to see your playlists here.'
+      : 'Your Spotify account doesn’t have any playlists yet.'
+
+  return (
+    <Section title="Recently saved" aside={songs.length > 0 && <SeeAll onClick={() => onNavigate('saved')} />}>
+      {songs.length ? (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {songs.map((song) => (
+            <SongRow key={`${song.source}-${song.id}`} song={song} slot="home" saved={isSaved(song.id)} onSave={onSave} />
+          ))}
+        </div>
+      ) : (
+        <p className="text-sm text-muted">
+          {syncing ? 'Loading your saved songs…' : 'Save songs in chat or connect Spotify to fill this list.'}
+        </p>
+      )}
+
+      <div className="mt-2 flex items-baseline justify-between gap-3">
+        <h3 className="text-[15px] font-semibold">Your playlists</h3>
+        {lists.length > 0 && <SeeAll onClick={() => onNavigate('playlists')} />}
       </div>
-      <h3 className="mt-2 text-[15px] font-semibold">Your playlists</h3>
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        {Array.from({ length: 4 }, (_, i) => (
-          <div key={i}>
-            <div className="aspect-square rounded-[12px] bg-art" />
-            <p className="mt-2 truncate text-sm font-semibold">[Playlist name]</p>
-            <p className="mt-0.5 text-xs text-muted">[# songs]</p>
-          </div>
-        ))}
-      </div>
+      {lists.length ? (
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          {lists.map((p) => (
+            <button key={p.id} type="button" onClick={() => onOpenPlaylist(p.id)} className="block min-w-0 text-left">
+              {p.image ? (
+                <img src={p.image} alt="" className="aspect-square w-full rounded-[12px] object-cover" />
+              ) : (
+                <div className="aspect-square rounded-[12px] bg-art" />
+              )}
+              <p className="mt-2 truncate text-sm font-semibold">{p.name}</p>
+              {p.count !== null && <p className="mt-0.5 text-xs text-muted">{p.count} songs</p>}
+            </button>
+          ))}
+        </div>
+      ) : (
+        <p className="text-sm text-muted">{noPlaylists}</p>
+      )}
     </Section>
   )
 }
 
-export default function HomePage() {
-  const { profile } = useSpotify()
+export default function HomePage({ savedSongs, isSaved, onSave, onNavigate }) {
+  const { profile, playlists } = useSpotify()
+  const [openPlaylistId, setOpenPlaylistId] = useState(null)
+  const openPlaylist = playlists.find((p) => p.id === openPlaylistId)
   const firstName = profile?.name?.split(' ')[0]
   const greeting = greetingFor(new Date().getHours())
+
+  if (openPlaylist) {
+    return <PlaylistDetail playlist={openPlaylist} onBack={() => setOpenPlaylistId(null)} isSaved={isSaved} onSave={onSave} />
+  }
 
   return (
     <section className="flex flex-col gap-5 px-10 py-8">
@@ -275,7 +320,13 @@ export default function HomePage() {
         <Picks />
       </div>
 
-      <RecentlySaved />
+      <RecentlySaved
+        savedSongs={savedSongs}
+        isSaved={isSaved}
+        onSave={onSave}
+        onNavigate={onNavigate}
+        onOpenPlaylist={setOpenPlaylistId}
+      />
     </section>
   )
 }

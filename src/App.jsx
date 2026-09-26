@@ -77,7 +77,7 @@ function Moodbot() {
 
   const shared = { savedSongs, isSaved, onSave: toggleSave }
   const pages = {
-    home: <HomePage />,
+    home: <HomePage {...shared} onNavigate={setPage} />,
     chat: <ChatPage {...shared} onNavigate={setPage} />,
     mood: <MoodPage />,
     saved: <SavedSongsPage {...shared} />,
