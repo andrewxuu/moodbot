@@ -4,8 +4,9 @@ import PlaylistSongRow, { PLAYLIST_COLUMNS } from '../components/songs/PlaylistS
 import { getPlaylistSongs, NotOwnedError } from '../spotify/api'
 import { useSpotify } from '../spotify/useSpotify'
 import { matchesSearch } from '../lib/search'
+import { playlistCache } from '../lib/playlistCache'
 
-const cache = new Map()
+const cache = playlistCache
 
 const totalLength = (songs) => {
   const minutes = Math.round(songs.reduce((sum, s) => sum + (s.durationMs || 0), 0) / 60000)

@@ -2,10 +2,12 @@ import { useState } from 'react'
 import { Music, Plus } from 'lucide-react'
 import { useSpotify } from '../spotify/useSpotify'
 import PlaylistDetail from './PlaylistDetail'
+import NewPlaylistForm from '../components/playlists/NewPlaylistForm'
 
 export default function PlaylistsPage({ isSaved, onSave }) {
-  const { status, error, playlists, sync, connect } = useSpotify()
+  const { status, error, playlists, sync, connect, createPlaylist } = useSpotify()
   const [openId, setOpenId] = useState(null)
+  const [creating, setCreating] = useState(false)
   const selected = playlists.find((p) => p.id === openId)
   const syncing = status === 'syncing'
   const needsSpotify = status === 'disconnected' || status === 'expired'
@@ -52,6 +54,7 @@ export default function PlaylistsPage({ isSaved, onSave }) {
           </button>
           <button
             type="button"
+            onClick={() => (needsSpotify ? connect() : setCreating(true))}
             className="flex h-11 items-center gap-1.5 rounded-full bg-teal px-[18px] text-[15px] text-white"
           >
             <Plus size={18} />
@@ -62,6 +65,25 @@ export default function PlaylistsPage({ isSaved, onSave }) {
 
       {error && status === 'error' && <p className="text-[13px] text-muted">{error}</p>}
       {body()}
+
+      {creating && (
+        <div
+          className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4"
+          onMouseDown={(e) => e.target === e.currentTarget && setCreating(false)}
+        >
+          <div role="dialog" aria-label="New playlist" className="w-full max-w-[380px] rounded-[14px] border border-line bg-surface p-6">
+            <h2 className="mb-4 font-serif text-[22px] font-semibold">New playlist</h2>
+            <NewPlaylistForm
+              onCancel={() => setCreating(false)}
+              onCreate={async (name) => {
+                const playlist = await createPlaylist(name)
+                setCreating(false)
+                setOpenId(playlist.id)
+              }}
+            />
+          </div>
+        </div>
+      )}
     </section>
   )
 }

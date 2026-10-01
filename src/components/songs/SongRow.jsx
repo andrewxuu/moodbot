@@ -1,6 +1,7 @@
-import { Heart, Plus, X } from 'lucide-react'
+import { Heart, X } from 'lucide-react'
 import AlbumArt from './AlbumArt'
 import IconButton from '../ui/IconButton'
+import AddToPlaylist from '../playlists/AddToPlaylist'
 import SongThumbs from './SongThumbs'
 import SpotifyEmbed from './SpotifyEmbed'
 import { usePlayer } from '../../spotify/usePlayer'
@@ -32,7 +33,7 @@ export default function SongRow({ song, slot = 'list', saved, onSave, showHeart 
       onClick={() => onSave?.(song)}
     />
   )
-  const plus = <IconButton icon={Plus} label="Add to playlist" />
+  const plus = <AddToPlaylist song={song} />
   const art = <AlbumArt song={song} size={isCard ? 44 : 40} onPlay={() => open(key)} />
 
   if (isCard) {

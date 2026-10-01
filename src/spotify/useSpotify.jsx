@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { hasToken, login, logout, ReconnectError } from './auth'
-import { getLikedSongs, getListening, getPlaylists, getProfile } from './api'
+import { addTracks, createPlaylist as createPlaylistRequest, getLikedSongs, getListening, getPlaylists, getProfile } from './api'
+import { playlistCache } from '../lib/playlistCache'
 
 const SpotifyContext = createContext(null)
 const empty = { profile: null, liked: [], playlists: [], listening: [] }
@@ -35,6 +36,23 @@ export function SpotifyProvider({ children }) {
     }
   }, [])
 
+  const createPlaylist = useCallback(async (name) => {
+    const playlist = await createPlaylistRequest(name)
+    setData((prev) => ({ ...prev, playlists: [playlist, ...prev.playlists] }))
+    return playlist
+  }, [])
+
+  const addToPlaylist = useCallback(async (playlistId, song) => {
+    const uri = song.uri ?? (song.id ? `spotify:track:${song.id}` : null)
+    if (!uri) throw new Error('This song can’t be added to a playlist.')
+    await addTracks(playlistId, [uri])
+    playlistCache.delete(playlistId)
+    setData((prev) => ({
+      ...prev,
+      playlists: prev.playlists.map((p) => (p.id === playlistId ? { ...p, count: (p.count ?? 0) + 1 } : p)),
+    }))
+  }, [])
+
   const connect = useCallback(() => {
     setError(null)
     login().catch((err) => setError(err.message))
@@ -52,7 +70,7 @@ export function SpotifyProvider({ children }) {
   }, [sync])
 
   return (
-    <SpotifyContext.Provider value={{ status, error, ...data, sync, connect, disconnect }}>
+    <SpotifyContext.Provider value={{ status, error, ...data, sync, connect, disconnect, createPlaylist, addToPlaylist }}>
       {children}
     </SpotifyContext.Provider>
   )

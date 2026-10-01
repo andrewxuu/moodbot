@@ -74,17 +74,41 @@ export async function getLikedSongs(max = 200) {
   return items.filter((i) => i.track?.id).map((i) => toSong(i.track, 'spotify'))
 }
 
+const toPlaylist = (p) => ({
+  id: p.id,
+  name: p.name,
+  image: p.images?.[0]?.url,
+  count: p.items?.total ?? p.tracks?.total ?? null,
+  url: p.external_urls?.spotify,
+  ownerId: p.owner?.id,
+  collaborative: Boolean(p.collaborative),
+})
+
 export async function getPlaylists(max = 100) {
   const items = await collect('/me/playlists?limit=50', max)
-  return items.filter(Boolean).map((p) => ({
-    id: p.id,
-    name: p.name,
-    image: p.images?.[0]?.url,
-    count: p.items?.total ?? p.tracks?.total ?? null,
-    url: p.external_urls?.spotify,
-    ownerId: p.owner?.id,
-    collaborative: Boolean(p.collaborative),
-  }))
+  return items.filter(Boolean).map(toPlaylist)
+}
+
+async function write(path, body) {
+  try {
+    return await request(path, { method: 'POST', body })
+  } catch (err) {
+    if (err.status === 403) {
+      const denied = new Error('Spotify needs permission to edit your playlists.')
+      denied.code = 'scope'
+      throw denied
+    }
+    throw err
+  }
+}
+
+export async function createPlaylist(name) {
+  const created = await write('/me/playlists', { name, public: false })
+  return { ...toPlaylist(created), count: 0 }
+}
+
+export async function addTracks(playlistId, uris) {
+  await write(`/playlists/${playlistId}/items`, { uris })
 }
 
 export class NotOwnedError extends Error {
