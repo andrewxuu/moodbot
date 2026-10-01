@@ -6,6 +6,8 @@ import { moodBg } from '../lib/moodMonth'
 import { ratingMood, stressLabel, useRatings } from '../ratings'
 import SongRow from '../components/songs/SongRow'
 import PlaylistDetail from './PlaylistDetail'
+import PlaylistPick from '../components/playlists/PlaylistPick'
+import { moodForStress } from '../lib/playlistMood'
 
 function greetingFor(hour) {
   if (hour < 5) return 'Up late'
@@ -277,10 +279,13 @@ function YourPlaylists({ onNavigate, onOpenPlaylist }) {
 
 export default function HomePage({ savedSongs, isSaved, onSave, onNavigate }) {
   const { profile, playlists } = useSpotify()
+  const { ratings } = useRatings()
   const [openPlaylistId, setOpenPlaylistId] = useState(null)
   const openPlaylist = playlists.find((p) => p.id === openPlaylistId)
   const firstName = profile?.name?.split(' ')[0]
   const greeting = greetingFor(new Date().getHours())
+  const todays = ratings.find((r) => isToday(r.at))
+  const mood = todays ? moodForStress(todays.rating) : null
 
   if (openPlaylist) {
     return <PlaylistDetail playlist={openPlaylist} onBack={() => setOpenPlaylistId(null)} isSaved={isSaved} onSave={onSave} />
@@ -294,6 +299,10 @@ export default function HomePage({ savedSongs, isSaved, onSave, onNavigate }) {
       </div>
 
       <MoodRating />
+
+      <Section title="Playlist for your mood" aside={mood && `For ${mood.toLowerCase()}`}>
+        <PlaylistPick mood={mood} savedSongs={savedSongs} onOpen={setOpenPlaylistId} />
+      </Section>
 
       <div className="grid gap-5 lg:grid-cols-2">
         <WeekSnapshot />

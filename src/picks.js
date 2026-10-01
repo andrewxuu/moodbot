@@ -54,7 +54,7 @@ export function pickSongs(pool, mood, mode, exclude = [], prefs = loadGenrePrefs
   return { songs, reason }
 }
 
-const targets = {
+export const targets = {
   Calm: { energy: 0.3, valence: 0.5, acousticness: 0.6 },
   Hype: { energy: 0.85, danceability: 0.75, valence: 0.65 },
   Focus: { energy: 0.4, instrumentalness: 0.6, speechiness: 0.05 },
@@ -74,9 +74,9 @@ function targetsFor(mood, lifting) {
   return t
 }
 
-const DIMS = ['energy', 'valence', 'danceability', 'acousticness', 'instrumentalness']
+export const DIMS = ['energy', 'valence', 'danceability', 'acousticness', 'instrumentalness']
 
-function distance(features, target) {
+export function distance(features, target) {
   const keys = Object.keys(target).filter((k) => DIMS.includes(k) && typeof features?.[k] === 'number')
   if (!keys.length) return Infinity
   return Math.sqrt(keys.reduce((sum, k) => sum + (features[k] - target[k]) ** 2, 0) / keys.length)
@@ -245,7 +245,7 @@ function blend(target, taste, amount) {
   return out
 }
 
-function averageOf(list) {
+export function averageOf(list) {
   const out = {}
   DIMS.forEach((k) => {
     const values = list.map((f) => f?.[k]).filter((v) => typeof v === 'number')

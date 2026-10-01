@@ -42,16 +42,18 @@ export function SpotifyProvider({ children }) {
     return playlist
   }, [])
 
-  const addToPlaylist = useCallback(async (playlistId, song) => {
-    const uri = song.uri ?? (song.id ? `spotify:track:${song.id}` : null)
-    if (!uri) throw new Error('This song can’t be added to a playlist.')
-    await addTracks(playlistId, [uri])
+  const addSongs = useCallback(async (playlistId, songs) => {
+    const uris = songs.map((s) => s.uri ?? (s.id ? `spotify:track:${s.id}` : null)).filter(Boolean)
+    if (!uris.length) throw new Error('These songs can’t be added to a playlist.')
+    await addTracks(playlistId, uris)
     playlistCache.delete(playlistId)
     setData((prev) => ({
       ...prev,
-      playlists: prev.playlists.map((p) => (p.id === playlistId ? { ...p, count: (p.count ?? 0) + 1 } : p)),
+      playlists: prev.playlists.map((p) => (p.id === playlistId ? { ...p, count: (p.count ?? 0) + uris.length } : p)),
     }))
   }, [])
+
+  const addToPlaylist = useCallback((playlistId, song) => addSongs(playlistId, [song]), [addSongs])
 
   const connect = useCallback(() => {
     setError(null)
@@ -70,7 +72,7 @@ export function SpotifyProvider({ children }) {
   }, [sync])
 
   return (
-    <SpotifyContext.Provider value={{ status, error, ...data, sync, connect, disconnect, createPlaylist, addToPlaylist }}>
+    <SpotifyContext.Provider value={{ status, error, ...data, sync, connect, disconnect, createPlaylist, addToPlaylist, addSongs }}>
       {children}
     </SpotifyContext.Provider>
   )
