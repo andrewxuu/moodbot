@@ -96,7 +96,7 @@ function Moodbot() {
   const pages = {
     home: <HomePage {...shared} onNavigate={setPage} />,
     chat: <ChatPage {...shared} onNavigate={setPage} />,
-    mood: <MoodPage />,
+    mood: <MoodPage savedSongs={savedSongs} />,
     saved: <SavedSongsPage {...shared} />,
     playlists: <PlaylistsPage {...shared} />,
   }

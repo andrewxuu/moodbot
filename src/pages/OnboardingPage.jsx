@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Check, Heart, MessageCircle, Music, Smile } from 'lucide-react'
+import { ChartColumn, Check, Heart, MessageCircle, Music, Smile } from 'lucide-react'
 import CardFrame from '../components/layout/CardFrame'
 import AuthForm from '../components/auth/AuthForm'
 import { useAccount } from '../account'
@@ -19,7 +19,7 @@ const features = [
 const tour = [
   { icon: MessageCircle, title: 'Chat', text: 'Talk about your mood' },
   { icon: Heart, title: 'Saved songs', text: 'Your favorites in one place' },
-  { icon: Smile, title: 'Wellbeing', text: 'See your mood calendar' },
+  { icon: ChartColumn, title: 'Stats', text: 'See your mood calendar and trends' },
 ]
 
 function Features() {

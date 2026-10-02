@@ -4,12 +4,14 @@ import CheckInList from '../components/mood/CheckInList'
 import MoodCalendar from '../components/mood/MoodCalendar'
 import MoodDaily from '../components/mood/MoodDaily'
 import MoodStats from '../components/mood/MoodStats'
+import MusicChatStats from '../components/mood/MusicChatStats'
 import MoodWeekChart from '../components/mood/MoodWeekChart'
 import MoodWeeks from '../components/mood/MoodWeeks'
 import SegmentedSwitch from '../components/ui/SegmentedSwitch'
 import { moodLevels } from '../data/data'
 import { checkInFor, checkInsBetween, daysBetween } from '../data/sampleMoods'
 import { periodStats } from '../lib/moodStats'
+import { chatStats, songStats } from '../lib/musicStats'
 import { moodLabel as label } from '../lib/moodMonth'
 import { useRatings } from '../ratings'
 
@@ -59,7 +61,7 @@ function PeriodNav({ title, onPrev, onNext, canGoNext, unit }) {
   )
 }
 
-export default function MoodPage() {
+export default function MoodPage({ savedSongs = [] }) {
   useRatings()
   const [range, setRange] = useState('Week')
   const [offset, setOffset] = useState(0)
@@ -92,7 +94,7 @@ export default function MoodPage() {
     <section className="flex flex-col gap-5 px-10 py-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-serif text-[30px] font-semibold">Your stress</h1>
+          <h1 className="font-serif text-[30px] font-semibold">Your stats</h1>
           <p className="mt-1 text-[15px] text-muted">Logged from your check-ins</p>
         </div>
         <SegmentedSwitch size="sm" options={['Week', 'Month']} value={range} onChange={changeRange} />
@@ -145,6 +147,13 @@ export default function MoodPage() {
         current={periodStats(period.start, period.end, today)}
         previous={periodStats(previousPeriod.start, previousPeriod.end, today)}
         compareTo={compareTo}
+      />
+
+      <MusicChatStats
+        chats={chatStats(daysBetween(period.start, period.end))}
+        checkIns={periodCheckIns.length}
+        songs={songStats(savedSongs)}
+        periodLabel={period.title}
       />
 
       <CheckInList title={listTitle} checkIns={periodCheckIns} periodKey={`${range}-${offset}`} />

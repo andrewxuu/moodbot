@@ -1,11 +1,11 @@
-import { Heart, House, List, MessageCircle, Music, Smile } from 'lucide-react'
+import { ChartColumn, Heart, House, List, MessageCircle, Music } from 'lucide-react'
 import { useSpotify } from '../../spotify/useSpotify'
 import { useAccount } from '../../account'
 
 const links = [
   { id: 'home', label: 'Home', icon: House },
   { id: 'chat', label: 'Chat', icon: MessageCircle },
-  { id: 'mood', label: 'Wellbeing', icon: Smile },
+  { id: 'mood', label: 'Stats', icon: ChartColumn },
   { id: 'saved', label: 'Saved songs', icon: Heart },
   { id: 'playlists', label: 'Playlists', icon: List },
 ]
