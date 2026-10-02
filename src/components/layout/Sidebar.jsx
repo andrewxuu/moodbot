@@ -1,5 +1,6 @@
 import { Heart, House, List, MessageCircle, Music, Smile } from 'lucide-react'
 import { useSpotify } from '../../spotify/useSpotify'
+import { useAccount } from '../../account'
 
 const links = [
   { id: 'home', label: 'Home', icon: House },
@@ -11,7 +12,8 @@ const links = [
 
 export default function Sidebar({ page, onNavigate, onOpenSettings }) {
   const { profile } = useSpotify()
-  const name = profile?.name ?? 'Guest'
+  const { name: accountName } = useAccount()
+  const name = profile?.name ?? accountName ?? 'Guest'
 
   return (
     <aside className="flex h-full w-[248px] shrink-0 flex-col gap-7 overflow-y-auto border-r border-line bg-surface px-[18px] py-7">

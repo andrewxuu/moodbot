@@ -4,6 +4,7 @@ import GenrePrefs from './GenrePrefs'
 import Toggle from '../ui/Toggle'
 import { useSpotify } from '../../spotify/useSpotify'
 import { useTheme } from '../../theme'
+import { useAccount } from '../../account'
 
 const themes = [
   { id: 'light', label: 'Light', icon: Sun },
@@ -36,6 +37,7 @@ function ToggleRow({ title, detail, checked, onChange }) {
 
 export default function SettingsModal({ onClose, onLogOut }) {
   const { status, profile, connect, disconnect } = useSpotify()
+  const { user, guest, name: accountName, startReplay } = useAccount()
   const connected = status === 'connected' || status === 'syncing'
   const closeRef = useRef(null)
 
@@ -54,7 +56,7 @@ export default function SettingsModal({ onClose, onLogOut }) {
     }
   }, [onClose])
 
-  const name = profile?.name ?? 'Guest'
+  const name = profile?.name ?? accountName ?? 'Guest'
 
   return (
     <div
@@ -95,7 +97,7 @@ export default function SettingsModal({ onClose, onLogOut }) {
               <div className="min-w-0">
                 <p className="truncate text-[15px] font-semibold">{name}</p>
                 <p className="mt-0.5 truncate text-[13px] text-muted">
-                  {profile?.id ? `Spotify username: ${profile.id}` : 'Connect Spotify to use your name and photo'}
+                  {user?.email ?? (profile?.id ? `Spotify username: ${profile.id}` : 'Connect Spotify to use your name and photo')}
                 </p>
               </div>
             </div>
@@ -119,13 +121,24 @@ export default function SettingsModal({ onClose, onLogOut }) {
               )}
             </div>
 
-            {connected && (
+            <button
+              type="button"
+              onClick={() => {
+                onClose()
+                startReplay()
+              }}
+              className="w-full px-4 py-3.5 text-left text-[15px] font-semibold hover:bg-cream"
+            >
+              Replay onboarding
+            </button>
+
+            {(connected || user || guest) && (
               <button
                 type="button"
                 onClick={onLogOut}
                 className="w-full px-4 py-3.5 text-left text-[15px] font-semibold text-mood-awful hover:bg-cream"
               >
-                Log out
+                {guest && !user ? 'Create account or log in' : 'Log out'}
               </button>
             )}
           </Card>

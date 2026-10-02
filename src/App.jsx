@@ -12,6 +12,10 @@ import PlaylistsPage from './pages/PlaylistsPage'
 import { SpotifyProvider, useSpotify } from './spotify/useSpotify'
 import { PlayerProvider } from './spotify/usePlayer'
 import { FeedbackProvider } from './feedback'
+import { AccountProvider, useAccount } from './account'
+import { cloudPush } from './lib/cloudSync'
+import AuthPage from './pages/AuthPage'
+import OnboardingPage from './pages/OnboardingPage'
 
 const SAVED_KEY = 'moodbot:saved-songs'
 
@@ -31,33 +35,46 @@ export default function App() {
 
   return (
     <ThemeProvider>
-      <SpotifyProvider>
-        <PlayerProvider>
-          <FeedbackProvider>
-            <RatingsProvider>
-              <Moodbot />
-            </RatingsProvider>
-          </FeedbackProvider>
-        </PlayerProvider>
-      </SpotifyProvider>
+      <AccountProvider>
+        <SpotifyProvider>
+          <PlayerProvider>
+            <FeedbackProvider>
+              <RatingsProvider>
+                <Gate />
+              </RatingsProvider>
+            </FeedbackProvider>
+          </PlayerProvider>
+        </SpotifyProvider>
+      </AccountProvider>
     </ThemeProvider>
   )
 }
 
+function Gate() {
+  const { ready, user, guest, onboarded, replay } = useAccount()
+  if (!ready) return <div className="min-h-screen bg-cream" />
+  if (!user && !guest && onboarded) return <AuthPage />
+  if (!onboarded || replay) return <OnboardingPage />
+  return <Moodbot />
+}
+
 function Moodbot() {
   const { liked, disconnect } = useSpotify()
+  const { signOut } = useAccount()
   const [settingsOpen, setSettingsOpen] = useState(false)
   const closeSettings = useCallback(() => setSettingsOpen(false), [])
   const logOut = () => {
     disconnect()
     setSettingsOpen(false)
     setPage('home')
+    signOut()
   }
   const [page, setPage] = useState('home')
   const [chatSaved, setChatSaved] = useState(loadSaved)
 
   useEffect(() => {
     localStorage.setItem(SAVED_KEY, JSON.stringify(chatSaved))
+    cloudPush('saved', chatSaved)
   }, [chatSaved])
 
   const likedIds = useMemo(() => new Set(liked.map((s) => s.id)), [liked])

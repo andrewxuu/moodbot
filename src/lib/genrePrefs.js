@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { cloudPush } from './cloudSync'
 
 const STORAGE_KEY = 'moodbot:genres'
 
@@ -25,6 +26,7 @@ export function useGenrePrefs() {
     } catch {
       return
     }
+    cloudPush('genres', prefs)
   }, [prefs])
 
   const toggle = (list, genre) =>
