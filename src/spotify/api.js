@@ -89,9 +89,9 @@ export async function getPlaylists(max = 100) {
   return items.filter(Boolean).map(toPlaylist)
 }
 
-async function write(path, body) {
+async function write(path, body, method = 'POST') {
   try {
-    return await request(path, { method: 'POST', body })
+    return await request(path, { method, body })
   } catch (err) {
     if (err.status === 403) {
       const denied = new Error('Spotify needs permission to edit your playlists.')
@@ -109,6 +109,11 @@ export async function createPlaylist(name) {
 
 export async function addTracks(playlistId, uris) {
   await write(`/playlists/${playlistId}/items`, { uris })
+}
+
+export async function removeTracks(playlistId, uris) {
+  const items = uris.map((uri) => ({ uri }))
+  await write(`/playlists/${playlistId}/items`, { items, tracks: items }, 'DELETE')
 }
 
 export class NotOwnedError extends Error {

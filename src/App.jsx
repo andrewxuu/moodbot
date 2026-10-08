@@ -29,9 +29,9 @@ const loadSaved = () => {
 
 export default function App() {
   const [path, setPath] = useState(window.location.pathname)
-  const finishLogin = useCallback(() => setPath('/'), [])
+  const finishLogin = useCallback(() => setPath(import.meta.env.BASE_URL), [])
 
-  if (path === '/callback') return <CallbackPage onDone={finishLogin} />
+  if (path === `${import.meta.env.BASE_URL}callback`) return <CallbackPage onDone={finishLogin} />
 
   return (
     <ThemeProvider>

@@ -5,6 +5,7 @@ import { getPlaylistSongs, NotOwnedError } from '../spotify/api'
 import { useSpotify } from '../spotify/useSpotify'
 import { matchesSearch } from '../lib/search'
 import { playlistCache } from '../lib/playlistCache'
+import ConfirmRemove from '../components/playlists/ConfirmRemove'
 
 const cache = playlistCache
 
@@ -15,12 +16,14 @@ const totalLength = (songs) => {
 }
 
 export default function PlaylistDetail({ playlist, onBack, isSaved, onSave }) {
-  const { profile } = useSpotify()
+  const { profile, removeSong } = useSpotify()
   const notMine = profile?.id && playlist.ownerId && playlist.ownerId !== profile.id && !playlist.collaborative
   const [state, setState] = useState(() =>
     cache.has(playlist.id) ? { status: 'ready', songs: cache.get(playlist.id) } : { status: 'loading', songs: [] }
   )
   const [query, setQuery] = useState('')
+  const [removing, setRemoving] = useState(null)
+  const canRemove = !(profile?.id && playlist.ownerId && playlist.ownerId !== profile.id)
 
   useEffect(() => {
     if (cache.has(playlist.id)) return
@@ -41,6 +44,16 @@ export default function PlaylistDetail({ playlist, onBack, isSaved, onSave }) {
       cancelled = true
     }
   }, [playlist.id, notMine])
+
+  const copies = removing ? state.songs.filter((s) => s.id === removing.id).length : 0
+
+  const confirmRemove = async () => {
+    await removeSong(playlist.id, removing, copies)
+    const songs = state.songs.filter((s) => s.id !== removing.id)
+    cache.set(playlist.id, songs)
+    setState({ status: 'ready', songs })
+    setRemoving(null)
+  }
 
   const shown = state.songs.filter((s) => matchesSearch(query, s.title, s.artist, s.album))
   const summary = state.status === 'ready' ? `${state.songs.length} songs, ${totalLength(state.songs)}` : playlist.count !== null ? `${playlist.count} songs` : ''
@@ -63,6 +76,7 @@ export default function PlaylistDetail({ playlist, onBack, isSaved, onSave }) {
           <span className="hidden xl:block">Date added</span>
           <Clock size={15} aria-label="Duration" />
           <span />
+          <span />
         </div>
         {shown.map((song) => (
           <PlaylistSongRow
@@ -71,6 +85,7 @@ export default function PlaylistDetail({ playlist, onBack, isSaved, onSave }) {
             index={state.songs.indexOf(song)}
             saved={isSaved(song.id)}
             onSave={onSave}
+            onRemove={canRemove ? setRemoving : undefined}
           />
         ))}
       </div>
@@ -115,6 +130,16 @@ export default function PlaylistDetail({ playlist, onBack, isSaved, onSave }) {
       )}
 
       {body()}
+
+      {removing && (
+        <ConfirmRemove
+          song={removing}
+          playlistName={playlist.name}
+          copies={copies}
+          onConfirm={confirmRemove}
+          onCancel={() => setRemoving(null)}
+        />
+      )}
     </section>
   )
 }

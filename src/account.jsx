@@ -76,7 +76,7 @@ export function AccountProvider({ children }) {
     }
     setSyncUser(null)
     removeKey(GUEST_KEY)
-    window.location.assign('/')
+    window.location.assign(import.meta.env.BASE_URL)
   }, [session])
 
   const continueAsGuest = useCallback(() => {

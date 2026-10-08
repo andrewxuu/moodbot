@@ -1,5 +1,5 @@
 const CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID
-const REDIRECT_URI = `${window.location.origin}/callback`
+const REDIRECT_URI = `${window.location.origin}${import.meta.env.BASE_URL}callback`
 const SCOPES = [
   'user-library-read',
   'playlist-read-private',

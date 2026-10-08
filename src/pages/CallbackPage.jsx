@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { handleCallback } from '../spotify/auth'
 
 const goHome = (onDone) => {
-  window.history.replaceState(null, '', '/')
+  window.history.replaceState(null, '', import.meta.env.BASE_URL)
   onDone()
 }
 

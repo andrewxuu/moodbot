@@ -1,11 +1,11 @@
-import { Heart, X } from 'lucide-react'
+import { Heart, Minus, X } from 'lucide-react'
 import AlbumArt from './AlbumArt'
 import IconButton from '../ui/IconButton'
 import SpotifyEmbed from './SpotifyEmbed'
 import { usePlayer } from '../../spotify/usePlayer'
 
 export const PLAYLIST_COLUMNS =
-  'grid grid-cols-[28px_minmax(0,1fr)_52px_44px] lg:grid-cols-[28px_minmax(0,2fr)_minmax(0,1.3fr)_52px_44px] xl:grid-cols-[28px_minmax(0,2fr)_minmax(0,1.3fr)_112px_52px_44px] items-center gap-4'
+  'grid grid-cols-[28px_minmax(0,1fr)_52px_44px_44px] lg:grid-cols-[28px_minmax(0,2fr)_minmax(0,1.3fr)_52px_44px_44px] xl:grid-cols-[28px_minmax(0,2fr)_minmax(0,1.3fr)_112px_52px_44px_44px] items-center gap-4'
 
 const formatDuration = (ms) => {
   const total = Math.round((ms || 0) / 1000)
@@ -15,7 +15,7 @@ const formatDuration = (ms) => {
 const formatDate = (iso) =>
   iso ? new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''
 
-export default function PlaylistSongRow({ song, index, saved, onSave }) {
+export default function PlaylistSongRow({ song, index, saved, onSave, onRemove }) {
   const { openKey, open, close } = usePlayer()
   const key = `playlist:${song.id}:${index}`
 
@@ -42,6 +42,7 @@ export default function PlaylistSongRow({ song, index, saved, onSave }) {
       <p className="hidden truncate text-sm text-muted xl:block">{formatDate(song.addedAt)}</p>
       <p className="text-sm tabular-nums text-muted">{formatDuration(song.durationMs)}</p>
       <IconButton icon={Heart} label={saved ? 'Saved' : 'Save song'} active={saved} onClick={() => onSave(song)} />
+      {onRemove ? <IconButton icon={Minus} label={`Remove ${song.title} from playlist`} onClick={() => onRemove(song)} /> : <span />}
     </div>
   )
 }
