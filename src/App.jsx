@@ -59,7 +59,7 @@ function Gate() {
 }
 
 function Moodbot() {
-  const { liked, disconnect } = useSpotify()
+  const { status, liked, disconnect, likeSong, unlikeSong } = useSpotify()
   const { signOut } = useAccount()
   const [settingsOpen, setSettingsOpen] = useState(false)
   const closeSettings = useCallback(() => setSettingsOpen(false), [])
@@ -95,10 +95,14 @@ function Moodbot() {
   const isSaved = (id) => likedIds.has(id) || chatSaved.some((s) => s.id === id)
 
   const toggleSave = (song) => {
-    if (likedIds.has(song.id)) return
+    const saved = isSaved(song.id)
     setChatSaved((prev) =>
-      prev.some((s) => s.id === song.id) ? prev.filter((s) => s.id !== song.id) : [{ ...song, source: 'chat', isNew: undefined }, ...prev]
+      saved ? prev.filter((s) => s.id !== song.id) : [{ ...song, source: 'chat', isNew: undefined }, ...prev]
     )
+    if (status === 'connected' && /^[A-Za-z0-9]{22}$/.test(song.id ?? '')) {
+      if (saved) unlikeSong(song)
+      else likeSong(song)
+    }
   }
 
   const shared = { savedSongs, isSaved, onSave: toggleSave }

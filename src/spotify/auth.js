@@ -2,6 +2,7 @@ const CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID
 const REDIRECT_URI = `${window.location.origin}${import.meta.env.BASE_URL}callback`
 const SCOPES = [
   'user-library-read',
+  'user-library-modify',
   'playlist-read-private',
   'playlist-read-collaborative',
   'playlist-modify-public',
