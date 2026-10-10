@@ -155,7 +155,7 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onNavigate, onOp
           </button>
         </div>
 
-        <div className="flex w-full max-w-[700px] flex-1 flex-col gap-3.5 overflow-y-auto">
+        <div className="flex w-full max-w-[700px] flex-1 flex-col gap-3.5 overflow-y-auto no-scrollbar">
           {visible.map((msg) => {
             if (msg.from === 'user') {
               return (
