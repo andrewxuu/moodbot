@@ -4,9 +4,9 @@ import { useSpotify } from '../spotify/useSpotify'
 import PlaylistDetail from './PlaylistDetail'
 import NewPlaylistForm from '../components/playlists/NewPlaylistForm'
 
-export default function PlaylistsPage({ isSaved, onSave }) {
+export default function PlaylistsPage({ isSaved, onSave, initialOpenId = null }) {
   const { status, error, playlists, sync, connect, createPlaylist } = useSpotify()
-  const [openId, setOpenId] = useState(null)
+  const [openId, setOpenId] = useState(initialOpenId)
   const [creating, setCreating] = useState(false)
   const selected = playlists.find((p) => p.id === openId)
   const syncing = status === 'syncing'

@@ -70,6 +70,15 @@ function Moodbot() {
     signOut()
   }
   const [page, setPage] = useState('home')
+  const [openPlaylistId, setOpenPlaylistId] = useState(null)
+  const navigate = (next) => {
+    setOpenPlaylistId(null)
+    setPage(next)
+  }
+  const openPlaylist = (id) => {
+    setOpenPlaylistId(id)
+    setPage('playlists')
+  }
   const [chatSaved, setChatSaved] = useState(loadSaved)
 
   useEffect(() => {
@@ -94,16 +103,16 @@ function Moodbot() {
 
   const shared = { savedSongs, isSaved, onSave: toggleSave }
   const pages = {
-    home: <HomePage {...shared} onNavigate={setPage} />,
-    chat: <ChatPage {...shared} onNavigate={setPage} />,
+    home: <HomePage {...shared} onNavigate={navigate} />,
+    chat: <ChatPage {...shared} onNavigate={navigate} onOpenPlaylist={openPlaylist} />,
     mood: <MoodPage savedSongs={savedSongs} />,
     saved: <SavedSongsPage {...shared} />,
-    playlists: <PlaylistsPage {...shared} />,
+    playlists: <PlaylistsPage {...shared} initialOpenId={openPlaylistId} />,
   }
 
   return (
     <div className="flex h-screen bg-cream">
-      <Sidebar page={page} onNavigate={setPage} onOpenSettings={() => setSettingsOpen(true)} />
+      <Sidebar page={page} onNavigate={navigate} onOpenSettings={() => setSettingsOpen(true)} />
       <main className="min-w-0 flex-1 overflow-y-auto">{pages[page]}</main>
       {settingsOpen && <SettingsModal onClose={closeSettings} onLogOut={logOut} />}
     </div>
