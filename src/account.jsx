@@ -45,7 +45,14 @@ export function AccountProvider({ children }) {
   }, [])
 
   const signUp = useCallback(async ({ name, email, password }) => {
-    const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { name: name.trim() } } })
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { name: name.trim() },
+        emailRedirectTo: `${window.location.origin}${import.meta.env.BASE_URL}`,
+      },
+    })
     if (error) throw error
     if (!data.session) return { needsConfirm: true }
     setSyncUser(data.user.id)
