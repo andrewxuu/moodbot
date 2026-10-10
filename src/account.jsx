@@ -58,6 +58,9 @@ export function AccountProvider({ children }) {
     setSyncUser(data.user.id)
     await pushAll(data.user.id).catch(() => {})
     removeKey(GUEST_KEY)
+    removeKey(DONE_KEY)
+    writeKey(STEP_KEY, 'spotify')
+    setOnboarded(false)
     setGuest(false)
     setSession(data.session)
     return { needsConfirm: false }
