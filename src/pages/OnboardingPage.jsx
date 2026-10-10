@@ -97,7 +97,8 @@ export default function OnboardingPage() {
   const ids = withAccount ? ['welcome', 'account', 'spotify', 'genres', 'tour'] : ['welcome', 'spotify', 'genres', 'tour']
   const [id, setId] = useState(() => {
     const saved = readKey(STEP_KEY)
-    return ids.includes(saved) ? saved : ids[0]
+    if (ids.includes(saved)) return saved
+    return saved === 'account' ? 'spotify' : ids[0]
   })
 
   const index = ids.indexOf(id)

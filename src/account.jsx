@@ -63,15 +63,17 @@ export function AccountProvider({ children }) {
     return { needsConfirm: false }
   }, [])
 
-  const signIn = useCallback(async ({ email, password }) => {
+  const signIn = useCallback(async ({ email, password, markOnboarded = true }) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) throw error
     await pullCloud(data.user.id).catch(() => {})
     setSyncUser(data.user.id)
-    writeKey(DONE_KEY, '1')
-    removeKey(STEP_KEY)
+    if (markOnboarded) {
+      writeKey(DONE_KEY, '1')
+      removeKey(STEP_KEY)
+      setOnboarded(true)
+    }
     removeKey(GUEST_KEY)
-    setOnboarded(true)
     setGuest(false)
     setSession(data.session)
   }, [])

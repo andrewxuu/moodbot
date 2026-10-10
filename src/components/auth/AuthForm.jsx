@@ -27,6 +27,7 @@ export default function AuthForm({ initialMode = 'create', onDone }) {
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [busy, setBusy] = useState(false)
+  const [signedUp, setSignedUp] = useState(false)
   const creating = mode === 'create'
 
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }))
@@ -52,12 +53,13 @@ export default function AuthForm({ initialMode = 'create', onDone }) {
       if (creating) {
         const result = await signUp(form)
         if (result.needsConfirm) {
+          setSignedUp(true)
           setMode('login')
           setNotice('Check your email to confirm your account, then log in.')
           return
         }
       } else {
-        await signIn(form)
+        await signIn({ ...form, markOnboarded: !signedUp })
       }
       onDone?.()
     } catch (err) {
