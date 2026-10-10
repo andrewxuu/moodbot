@@ -3,11 +3,15 @@ import { getPlaylistSongs } from '../spotify/api'
 import { playlistCache } from './playlistCache'
 import { FILTERS } from './filters'
 import { averageOf, distance, targets } from '../picks'
+import { llmSongs } from '../services/llmSongs'
 
 const MAX_PLAYLISTS = 10
 const MAX_SONGS = 100
 const MIN_SONGS = 3
 const FAR = 0.5
+
+export const NEW_MIN = 15
+export const NEW_MAX = 20
 
 export const moodForStress = (rating) => (rating <= 4 ? 'Calm' : rating <= 6 ? 'Focus' : 'Happy')
 
@@ -59,4 +63,31 @@ export function describeProfile(p) {
   if (p.instrumentalness > 0.5) traits.push('instrumental')
   if (p.danceability > 0.65) traits.push('danceable')
   return traits.slice(0, 3).join(', ') || 'Balanced mix'
+}
+
+const unique = (songs) => [...new Map(songs.map((s) => [s.id, s])).values()]
+
+export async function buildMoodSongs({ mood, saved, listening }) {
+  let songs = unique(await closestSongs(saved.filter((s) => s.id).slice(0, 100), mood, NEW_MAX))
+
+  if (songs.length < NEW_MIN) {
+    try {
+      const have = new Set(songs.map((s) => s.id))
+      const pool = listening.filter((s) => s.id && !have.has(s.id))
+      songs = unique([...songs, ...(await closestSongs(pool, mood, NEW_MAX - songs.length))])
+    } catch {
+      songs = unique(songs)
+    }
+  }
+
+  if (songs.length < NEW_MIN) {
+    try {
+      const more = await llmSongs(mood, NEW_MAX - songs.length, songs)
+      songs = unique([...songs, ...more])
+    } catch {
+      songs = unique(songs)
+    }
+  }
+
+  return songs.slice(0, NEW_MAX)
 }

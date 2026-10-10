@@ -11,13 +11,42 @@ const fallback = { reply: 'Sorry, I lost my train of thought. Try that again?', 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } })
 
+async function songs({ mood, count, avoid }: { mood: string; count: number; avoid: { title: string; artist: string }[] }, model: string) {
+  const n = Math.min(Math.max(Number(count) || 15, 1), 30)
+  const skip = (Array.isArray(avoid) ? avoid : []).map((s) => `${s.title} by ${s.artist}`).join('; ')
+  const prompt = `List ${n} real, popular songs that fit a ${String(mood).slice(0, 20)} mood. Mix artists and eras. Do not repeat these: ${skip || 'none'}. Reply with only JSON: {"songs":[{"title":"","artist":""}]}`
+
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+    method: 'POST',
+    headers: { 'x-goog-api-key': Deno.env.get('GEMINI_API_KEY')!, 'content-type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      generationConfig: { maxOutputTokens: 2048, responseMimeType: 'application/json' },
+    }),
+  })
+  if (!res.ok) return json({ songs: [] })
+
+  const data = await res.json()
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
+  try {
+    const parsed = JSON.parse(text.slice(text.indexOf('{'), text.lastIndexOf('}') + 1))
+    const list = (Array.isArray(parsed.songs) ? parsed.songs : []).filter((s: { title?: string; artist?: string }) => s?.title && s?.artist)
+    return json({ songs: list.map((s: { title: string; artist: string }) => ({ title: String(s.title), artist: String(s.artist) })) })
+  } catch {
+    return json({ songs: [] })
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
 
-  const { messages } = await req.json()
-  if (!Array.isArray(messages) || !messages.length) return json({ error: 'No messages' }, 400)
-
+  const body = await req.json()
   const model = Deno.env.get('GEMINI_MODEL') ?? 'gemini-3.6-flash'
+
+  if (body.mode === 'songs') return songs(body, model)
+
+  const { messages } = body
+  if (!Array.isArray(messages) || !messages.length) return json({ error: 'No messages' }, 400)
 
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
     method: 'POST',

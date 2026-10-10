@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import SpotifyError from './SpotifyError'
 import { useSpotify } from '../../spotify/useSpotify'
-import { closestSongs, describeProfile, isGoodMatch, matchPercent, profilePlaylists, rankProfiles } from '../../lib/playlistMood'
+import { buildMoodSongs, describeProfile, isGoodMatch, matchPercent, profilePlaylists, rankProfiles } from '../../lib/playlistMood'
 
 export default function PlaylistPick({ mood, savedSongs, onOpen }) {
-  const { status, profile, playlists, createPlaylist, addSongs } = useSpotify()
+  const { status, profile, playlists, listening, createPlaylist, addSongs } = useSpotify()
   const [profiles, setProfiles] = useState(null)
   const [building, setBuilding] = useState(false)
   const [error, setError] = useState(null)
@@ -26,8 +26,8 @@ export default function PlaylistPick({ mood, savedSongs, onOpen }) {
     setBuilding(true)
     setError(null)
     try {
-      const picks = await closestSongs(savedSongs.filter((s) => s.id).slice(0, 100), mood)
-      if (picks.length < 3) throw new Error(`Not enough saved songs fit ${mood.toLowerCase()} yet.`)
+      const picks = await buildMoodSongs({ mood, saved: savedSongs, listening })
+      if (!picks.length) throw new Error(`Couldn’t find enough ${mood.toLowerCase()} songs yet. Try again.`)
       const playlist = await createPlaylist(`${mood} mix`)
       await addSongs(playlist.id, picks)
       onOpen(playlist.id)
@@ -70,7 +70,7 @@ export default function PlaylistPick({ mood, savedSongs, onOpen }) {
       <button
         type="button"
         onClick={build}
-        disabled={building || !savedSongs.length}
+        disabled={building}
         className="h-10 rounded-full bg-teal px-5 text-[15px] text-white disabled:opacity-50"
       >
         {building ? 'Building…' : `Build a ${mood.toLowerCase()} mix`}
