@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { PanelRightClose, PanelRightOpen, Search } from 'lucide-react'
+import { PanelRightClose, PanelRightOpen, Search, X } from 'lucide-react'
 import AlbumArt from '../songs/AlbumArt'
 import IconButton from '../ui/IconButton'
 import SongRow from '../songs/SongRow'
@@ -9,46 +9,15 @@ import { matchesSearch } from '../../lib/search'
 const COLLAPSED_KEY = 'moodbot:saved-panel-collapsed'
 const LIMIT = 11
 
-export default function SavedPanel({ songs, onSeeAll }) {
-  const { open } = usePlayer()
-  const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSED_KEY) === 'true')
+function PanelBody({ songs, onSeeAll, action }) {
   const [query, setQuery] = useState('')
-
-  useEffect(() => {
-    localStorage.setItem(COLLAPSED_KEY, String(collapsed))
-  }, [collapsed])
-
-  if (collapsed) {
-    return (
-      <aside
-        aria-label="Saved songs"
-        className="flex h-full w-16 shrink-0 flex-col items-center gap-3 overflow-y-auto border-l border-line bg-surface py-8"
-      >
-        <IconButton icon={PanelRightOpen} label="Show saved songs" size={40} onClick={() => setCollapsed(false)} />
-        {songs.slice(0, LIMIT).map((song) => (
-          <AlbumArt
-            key={song.id}
-            song={song}
-            onPlay={() => {
-              open(`panel:${song.id}`)
-              setCollapsed(false)
-            }}
-          />
-        ))}
-      </aside>
-    )
-  }
-
   const shown = songs.filter((s) => matchesSearch(query, s.title, s.artist, s.album)).slice(0, LIMIT)
 
   return (
-    <aside
-      aria-label="Saved songs"
-      className="flex h-full w-[400px] shrink-0 flex-col gap-4 border-l border-line bg-surface px-6 py-8"
-    >
+    <>
       <div className="flex items-center gap-3">
         <p className="flex-1 text-lg font-semibold">Saved songs</p>
-        <IconButton icon={PanelRightClose} label="Hide saved songs" size={36} onClick={() => setCollapsed(true)} />
+        {action}
       </div>
 
       <label className="flex h-11 items-center gap-2.5 rounded-[14px] border border-line px-3.5">
@@ -80,6 +49,82 @@ export default function SavedPanel({ songs, onSeeAll }) {
           See all {songs.length} saved songs
         </button>
       )}
-    </aside>
+    </>
+  )
+}
+
+export default function SavedPanel({ songs, onSeeAll, drawerOpen = false, onCloseDrawer }) {
+  const { open } = usePlayer()
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSED_KEY) === 'true')
+
+  useEffect(() => {
+    localStorage.setItem(COLLAPSED_KEY, String(collapsed))
+  }, [collapsed])
+
+  useEffect(() => {
+    if (!drawerOpen) return
+    const onKey = (e) => e.key === 'Escape' && onCloseDrawer?.()
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [drawerOpen, onCloseDrawer])
+
+  const drawer = drawerOpen && (
+    <div className="fixed inset-0 z-40 xl:hidden">
+      <button type="button" aria-label="Close saved songs" onClick={onCloseDrawer} className="absolute inset-0 bg-black/40" />
+      <aside
+        role="dialog"
+        aria-label="Saved songs"
+        className="absolute inset-x-0 bottom-0 flex max-h-[85vh] animate-sheet-up flex-col gap-4 rounded-t-[20px] bg-surface px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-6 motion-reduce:animate-none md:inset-y-0 md:left-auto md:right-0 md:max-h-none md:w-[400px] md:animate-sheet-in md:rounded-none md:px-6 md:py-8"
+      >
+        <PanelBody
+          songs={songs}
+          onSeeAll={() => {
+            onCloseDrawer?.()
+            onSeeAll()
+          }}
+          action={<IconButton icon={X} label="Close saved songs" size={36} onClick={onCloseDrawer} />}
+        />
+      </aside>
+    </div>
+  )
+
+  if (collapsed) {
+    return (
+      <>
+        <aside
+          aria-label="Saved songs"
+          className="hidden h-full w-16 shrink-0 flex-col items-center gap-3 overflow-y-auto border-l border-line bg-surface py-8 xl:flex"
+        >
+          <IconButton icon={PanelRightOpen} label="Show saved songs" size={40} onClick={() => setCollapsed(false)} />
+          {songs.slice(0, LIMIT).map((song) => (
+            <AlbumArt
+              key={song.id}
+              song={song}
+              onPlay={() => {
+                open(`panel:${song.id}`)
+                setCollapsed(false)
+              }}
+            />
+          ))}
+        </aside>
+        {drawer}
+      </>
+    )
+  }
+
+  return (
+    <>
+      <aside
+        aria-label="Saved songs"
+        className="hidden h-full w-[400px] shrink-0 flex-col gap-4 border-l border-line bg-surface px-6 py-8 xl:flex"
+      >
+        <PanelBody
+          songs={songs}
+          onSeeAll={onSeeAll}
+          action={<IconButton icon={PanelRightClose} label="Hide saved songs" size={36} onClick={() => setCollapsed(true)} />}
+        />
+      </aside>
+      {drawer}
+    </>
   )
 }

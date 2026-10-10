@@ -93,7 +93,7 @@ export default function PlaylistDetail({ playlist, onBack, isSaved, onSave }) {
   }
 
   return (
-    <section className="flex flex-col gap-5 px-10 py-8">
+    <section className="flex flex-col gap-5 px-4 py-5 md:px-8 md:py-8 xl:px-10">
       <button type="button" onClick={onBack} className="flex items-center gap-1.5 self-start text-[15px] font-semibold text-teal">
         <ArrowLeft size={18} />
         Playlists

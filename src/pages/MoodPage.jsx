@@ -91,8 +91,8 @@ export default function MoodPage({ savedSongs = [] }) {
           : `Check-ins, ${period.title}`
 
   return (
-    <section className="flex flex-col gap-5 px-10 py-8">
-      <div className="flex items-center justify-between">
+    <section className="flex flex-col gap-5 px-4 py-5 md:px-8 md:py-8 xl:px-10">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-serif text-[30px] font-semibold">Your stats</h1>
           <p className="mt-1 text-[15px] text-muted">Logged from your check-ins</p>
@@ -102,7 +102,7 @@ export default function MoodPage({ savedSongs = [] }) {
 
       <div className="flex">
         <div className="flex min-w-0 flex-1 flex-col gap-3 rounded-[14px] border border-line bg-surface p-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <PeriodNav
               title={period.title}
               unit={range.toLowerCase()}
@@ -110,7 +110,7 @@ export default function MoodPage({ savedSongs = [] }) {
               onNext={() => setOffset((o) => o + 1)}
               canGoNext={offset < 0}
             />
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               {range === 'Month' && (
                 <SegmentedSwitch size="sm" options={['Weeks', 'Calendar', 'Daily']} value={monthView} onChange={setMonthView} />
               )}

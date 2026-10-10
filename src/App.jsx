@@ -115,9 +115,11 @@ function Moodbot() {
   }
 
   return (
-    <div className="flex h-screen bg-cream">
+    <div className="flex h-dvh bg-cream">
       <Sidebar page={page} onNavigate={navigate} onOpenSettings={() => setSettingsOpen(true)} />
-      <main className="min-w-0 flex-1 overflow-y-auto">{pages[page]}</main>
+      <main className="min-w-0 flex-1 overflow-y-auto pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0">
+        <div className="mx-auto h-full max-w-[1680px]">{pages[page]}</div>
+      </main>
       {settingsOpen && <SettingsModal onClose={closeSettings} onLogOut={logOut} />}
     </div>
   )

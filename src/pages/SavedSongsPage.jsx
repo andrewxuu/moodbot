@@ -40,11 +40,11 @@ export default function SavedSongsPage({ savedSongs, isSaved, onSave }) {
   }
 
   return (
-    <section className="flex flex-col gap-5 px-10 py-8">
+    <section className="flex flex-col gap-5 px-4 py-5 md:px-8 md:py-8 xl:px-10">
       <h1 className="font-serif text-[30px] font-semibold">Saved songs</h1>
 
       <div className="flex flex-wrap items-center gap-4">
-        <label className="flex h-12 w-[420px] items-center gap-2.5 rounded-[14px] border border-line bg-surface px-3.5">
+        <label className="flex h-12 w-full max-w-[420px] items-center gap-2.5 rounded-[14px] border border-line bg-surface px-3.5">
           <Search size={18} className="text-teal" />
           <input
             value={query}

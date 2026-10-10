@@ -23,6 +23,14 @@ export default {
           awful: v('mood-awful'),
         },
       },
+      keyframes: {
+        'sheet-up': { from: { transform: 'translateY(100%)' }, to: { transform: 'translateY(0)' } },
+        'sheet-in': { from: { transform: 'translateX(100%)' }, to: { transform: 'translateX(0)' } },
+      },
+      animation: {
+        'sheet-up': 'sheet-up 0.25s ease-out',
+        'sheet-in': 'sheet-in 0.25s ease-out',
+      },
       fontFamily: {
         serif: ['Fraunces', 'Georgia', 'serif'],
         sans: ['"DM Sans"', 'system-ui', 'sans-serif'],

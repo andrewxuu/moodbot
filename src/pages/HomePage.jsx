@@ -292,7 +292,7 @@ export default function HomePage({ savedSongs, isSaved, onSave, onNavigate }) {
   }
 
   return (
-    <section className="flex flex-col gap-5 px-10 py-8">
+    <section className="flex flex-col gap-5 px-4 py-5 md:px-8 md:py-8 xl:px-10">
       <div>
         <h1 className="font-serif text-[30px] font-semibold">{firstName ? `${greeting}, ${firstName}` : greeting}</h1>
         <p className="mt-1 text-[15px] text-muted">How are you feeling right now?</p>

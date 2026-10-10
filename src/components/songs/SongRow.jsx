@@ -38,13 +38,13 @@ export default function SongRow({ song, slot = 'list', saved, onSave, showHeart 
 
   if (isCard) {
     return (
-      <div className="flex items-center gap-4 rounded-[14px] border border-line bg-surface px-3.5 py-2.5">
+      <div className="flex items-center gap-3 rounded-[14px] border border-line bg-surface px-3.5 py-2.5 sm:gap-4">
         {art}
-        <div className="w-[360px] min-w-0 shrink">
+        <div className="min-w-0 flex-1 sm:w-[360px] sm:flex-none">
           <p className="truncate text-[15px] font-semibold">{song.title}</p>
           <p className="mt-0.5 truncate text-[13px] text-muted">{song.artist}</p>
         </div>
-        <p className="flex-1 text-sm text-muted">{sourceLabel[song.source]}</p>
+        <p className="hidden flex-1 text-sm text-muted sm:block">{sourceLabel[song.source]}</p>
         {plus}
         {heart}
       </div>

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { ListPlus, Music, RefreshCw, Send } from 'lucide-react'
+import { Heart, ListPlus, Music, RefreshCw, Send } from 'lucide-react'
 import ChatDayPicker from '../components/chat/ChatDayPicker'
 import ChatMessage from '../components/chat/ChatMessage'
 import PlaylistCard from '../components/chat/PlaylistCard'
@@ -33,6 +33,7 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onNavigate, onOp
   const [mode, setMode] = useState('Match my mood')
   const [viewDay, setViewDay] = useState(todayKey)
   const [building, setBuilding] = useState(false)
+  const [savedOpen, setSavedOpen] = useState(false)
   const nextId = useRef(null)
   const shown = useRef({})
   const endRef = useRef(null)
@@ -140,10 +141,18 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onNavigate, onOp
 
   return (
     <div className="flex h-full">
-      <section className="flex min-w-0 flex-1 flex-col items-center gap-[18px] px-10 py-8">
-        <div className="flex items-center gap-3 self-start">
-          <h1 className="font-serif text-[30px] font-semibold">Chat</h1>
+      <section className="flex min-w-0 flex-1 flex-col items-center gap-3.5 px-4 py-5 md:gap-[18px] md:px-8 md:py-8 xl:px-10">
+        <div className="flex w-full items-center gap-3">
+          <h1 className="font-serif text-[26px] font-semibold md:text-[30px]">Chat</h1>
           <ChatDayPicker days={days} value={viewDay} onChange={setViewDay} />
+          <button
+            type="button"
+            onClick={() => setSavedOpen(true)}
+            className="ml-auto flex h-10 items-center gap-1.5 rounded-full border border-line bg-surface px-3.5 text-sm font-semibold hover:border-teal xl:hidden"
+          >
+            <Heart size={16} className="text-teal" />
+            Saved songs
+          </button>
         </div>
 
         <div className="flex w-full max-w-[700px] flex-1 flex-col gap-3.5 overflow-y-auto">
@@ -201,7 +210,7 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onNavigate, onOp
                     {msg.reason}
                   </p>
                   {isToday && (
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       <button
                         type="button"
                         onClick={() => moreLikeThis(msg)}
@@ -261,7 +270,12 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onNavigate, onOp
         )}
       </section>
 
-      <SavedPanel songs={savedSongs} onSeeAll={() => onNavigate('saved')} />
+      <SavedPanel
+        songs={savedSongs}
+        onSeeAll={() => onNavigate('saved')}
+        drawerOpen={savedOpen}
+        onCloseDrawer={() => setSavedOpen(false)}
+      />
     </div>
   )
 }

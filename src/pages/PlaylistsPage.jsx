@@ -15,13 +15,13 @@ export default function PlaylistsPage({ isSaved, onSave, initialOpenId = null })
   const body = () => {
     if (playlists.length) {
       return (
-        <div className="grid grid-cols-[repeat(auto-fill,260px)] gap-6">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-4 sm:grid-cols-[repeat(auto-fill,minmax(200px,260px))] sm:gap-6">
           {playlists.map((p) => (
             <button key={p.id} type="button" onClick={() => setOpenId(p.id)} className="block text-left">
               {p.image ? (
-                <img src={p.image} alt="" className="h-[220px] w-full rounded-[14px] object-cover" />
+                <img src={p.image} alt="" className="aspect-square w-full rounded-[14px] object-cover sm:h-[220px] sm:aspect-auto" />
               ) : (
-                <div className="h-[220px] rounded-[14px] bg-art" />
+                <div className="aspect-square rounded-[14px] bg-art sm:aspect-auto sm:h-[220px]" />
               )}
               <p className="mt-2 truncate text-base font-semibold">{p.name}</p>
               {p.count !== null && <p className="mt-2 text-[13px] text-muted">{p.count} songs</p>}
@@ -40,7 +40,7 @@ export default function PlaylistsPage({ isSaved, onSave, initialOpenId = null })
   }
 
   return (
-    <section className="flex flex-col gap-6 px-10 py-8">
+    <section className="flex flex-col gap-6 px-4 py-5 md:px-8 md:py-8 xl:px-10">
       <div className="flex items-center justify-between">
         <h1 className="font-serif text-[30px] font-semibold">Playlists</h1>
         <div className="flex gap-3">
