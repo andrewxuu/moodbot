@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { hasToken, login, logout, ReconnectError } from './auth'
-import { addTracks, createPlaylist as createPlaylistRequest, getLikedSongs, getListening, getPlaylists, getProfile, likeTrack, removeTracks, unlikeTrack } from './api'
+import { addTracks, createPlaylist as createPlaylistRequest, getLikedSongs, getListening, getPlaylists, getProfile, likeTrack, removeTracks, unlikeTrack, deletePlaylist, restorePlaylist } from './api'
 import { playlistCache } from '../lib/playlistCache'
 
 const SpotifyContext = createContext(null)
@@ -62,6 +62,30 @@ export function SpotifyProvider({ children }) {
     }))
   }, [])
 
+  const removePlaylists = useCallback(async (list) => {
+    const results = await Promise.allSettled(list.map((p) => deletePlaylist(p.id)))
+    const done = list.filter((_, i) => results[i].status === 'fulfilled')
+    const failure = results.find((r) => r.status === 'rejected')
+    if (done.length) {
+      setData((prev) => ({ ...prev, playlists: prev.playlists.filter((p) => !done.some((d) => d.id === p.id)) }))
+    }
+    if (failure && !done.length) throw failure.reason
+    return { done, failed: list.length - done.length }
+  }, [])
+
+  const restorePlaylists = useCallback(async (list, order) => {
+    const results = await Promise.allSettled(list.map((p) => restorePlaylist(p.id)))
+    const back = list.filter((_, i) => results[i].status === 'fulfilled')
+    if (back.length) {
+      const rank = (p) => (order.includes(p.id) ? order.indexOf(p.id) : order.length)
+      setData((prev) => ({
+        ...prev,
+        playlists: [...prev.playlists, ...back.filter((b) => !prev.playlists.some((p) => p.id === b.id))].sort((a, b) => rank(a) - rank(b)),
+      }))
+    }
+    if (back.length < list.length) throw new Error('Spotify couldn’t restore every playlist. Check your Spotify library.')
+  }, [])
+
   const likeSong = useCallback(async (song) => {
     try {
       await likeTrack(song.id)
@@ -99,7 +123,7 @@ export function SpotifyProvider({ children }) {
   }, [sync])
 
   return (
-    <SpotifyContext.Provider value={{ status, error, ...data, sync, connect, disconnect, createPlaylist, addToPlaylist, addSongs, removeSong, likeSong, unlikeSong }}>
+    <SpotifyContext.Provider value={{ status, error, ...data, sync, connect, disconnect, createPlaylist, addToPlaylist, addSongs, removeSong, likeSong, unlikeSong, removePlaylists, restorePlaylists }}>
       {children}
     </SpotifyContext.Provider>
   )

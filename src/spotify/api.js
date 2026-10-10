@@ -119,6 +119,20 @@ async function libraryWrite(id, method) {
 export const likeTrack = (id) => libraryWrite(id, 'PUT')
 export const unlikeTrack = (id) => libraryWrite(id, 'DELETE')
 
+const playlistLibraryUri = (id) => encodeURIComponent(`spotify:playlist:${id}`)
+
+async function playlistLibraryWrite(id, method) {
+  try {
+    await write(`/me/library?uris=${playlistLibraryUri(id)}`, undefined, method)
+  } catch (err) {
+    if (err.code === 'scope' || (err.status !== 400 && err.status !== 404)) throw err
+    await write(`/playlists/${id}/followers`, method === 'PUT' ? { public: false } : undefined, method)
+  }
+}
+
+export const deletePlaylist = (id) => playlistLibraryWrite(id, 'DELETE')
+export const restorePlaylist = (id) => playlistLibraryWrite(id, 'PUT')
+
 export async function addTracks(playlistId, uris) {
   await write(`/playlists/${playlistId}/items`, { uris })
 }
