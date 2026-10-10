@@ -12,6 +12,7 @@ import { detectMood, getPicks, pickSongs } from '../picks'
 import { songs as sampleSongs } from '../data/data'
 import { moodKey, useFeedback } from '../feedback'
 import { chatDays, greetingText, loadChats, saveChat, todayKey } from '../data/sampleChats'
+import { askMoodbot } from '../services/chatLLM'
 
 const moods = ['Calm', 'Hype', 'Focus', 'Sad', 'Happy']
 const SAMPLE_REASON = 'Sample picks. Connect Spotify to get picks from your own listening.'
@@ -72,11 +73,19 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onNavigate }) {
     setMessages((m) => m.map((msg) => (msg.id === id ? { id, from: 'bot', mood, ...picks } : msg)))
   }
 
-  const send = (text) => {
+  const send = async (text) => {
     const clean = text.trim()
     if (!clean) return
     setDraft('')
-    respond(detectMood(clean), [], [{ id: nextId.current++, from: 'user', text: clean }])
+    const userMsg = { id: nextId.current++, from: 'user', text: clean }
+    setMessages((m) => [...m, userMsg])
+
+    const llm = await askMoodbot([...messages, userMsg])
+    if (!llm) return respond(detectMood(clean))
+
+    const replyMsg = { id: nextId.current++, from: 'bot', text: llm.reply }
+    if (!llm.song_queries.length) return setMessages((m) => [...m, replyMsg])
+    respond(detectMood(llm.mood) || detectMood(clean), [], [replyMsg])
   }
 
   const moreLikeThis = (msg) => respond(msg.mood, msg.songs.map((s) => s.id))
