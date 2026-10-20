@@ -62,7 +62,7 @@ function MoodRating() {
 
   return (
     <Section title="Rate your stress">
-      <div role="radiogroup" aria-label="Stress from 1, very stressed, to 10, calm" className="grid grid-cols-10 gap-1.5">
+      <div role="radiogroup" aria-label="Stress from 1, calm, to 10, very stressed" className="grid grid-cols-10 gap-1.5">
         {Array.from({ length: 10 }, (_, i) => {
           const value = i + 1
           const on = current?.rating === value
@@ -84,8 +84,8 @@ function MoodRating() {
         })}
       </div>
       <div className="flex justify-between text-xs text-muted">
-        <span>Very stressed</span>
         <span>Calm</span>
+        <span>Very stressed</span>
       </div>
 
       {current && (
