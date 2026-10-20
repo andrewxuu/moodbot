@@ -1,28 +1,52 @@
-import { ChartColumn, Heart, House, List, MessageCircle, Music } from 'lucide-react'
+import { ChartColumn, House, List, MessageCircle, Music } from 'lucide-react'
 import { useSpotify } from '../../spotify/useSpotify'
 import { useAccount } from '../../account'
 
 const links = [
-  { id: 'home', label: 'Home', short: 'Home', icon: House },
-  { id: 'chat', label: 'Chat', short: 'Chat', icon: MessageCircle },
-  { id: 'mood', label: 'Stats', short: 'Stats', icon: ChartColumn },
-  { id: 'saved', label: 'Saved songs', short: 'Saved', icon: Heart },
-  { id: 'playlists', label: 'Playlists', short: 'Lists', icon: List },
+  { id: 'home', label: 'Home', icon: House },
+  { id: 'chat', label: 'Chat', icon: MessageCircle },
+  { id: 'mood', label: 'Stats', icon: ChartColumn },
+  { id: 'playlists', label: 'Playlists', icon: List },
 ]
 
-export default function Sidebar({ page, onNavigate, onOpenSettings }) {
+function useProfileInfo() {
   const { profile } = useSpotify()
   const { name: accountName } = useAccount()
-  const name = profile?.name ?? accountName ?? 'Guest'
+  return { image: profile?.image, name: profile?.name ?? accountName ?? 'Guest' }
+}
 
-  const avatar = (size) =>
-    profile?.image ? (
-      <img src={profile.image} alt="" className={`${size} shrink-0 rounded-full object-cover`} />
-    ) : (
-      <div className={`flex ${size} shrink-0 items-center justify-center rounded-full bg-teal-soft text-sm font-semibold text-teal`}>
-        {name[0].toUpperCase()}
-      </div>
-    )
+function Avatar({ image, name, size }) {
+  return image ? (
+    <img src={image} alt="" className={`${size} shrink-0 rounded-full object-cover`} />
+  ) : (
+    <div className={`flex ${size} shrink-0 items-center justify-center rounded-full bg-teal-soft text-sm font-semibold text-teal`}>
+      {name[0].toUpperCase()}
+    </div>
+  )
+}
+
+export function MobileHeader({ onOpenSettings }) {
+  const { image, name } = useProfileInfo()
+
+  return (
+    <header className="flex h-16 shrink-0 items-center px-4 pt-[env(safe-area-inset-top)] md:hidden">
+      <button
+        type="button"
+        onClick={onOpenSettings}
+        aria-haspopup="dialog"
+        aria-label="Settings"
+        className="-ml-1 flex size-12 items-center justify-center rounded-full active:bg-track"
+      >
+        <span className="rounded-full p-0.5 ring-1 ring-line">
+          <Avatar image={image} name={name} size="size-10" />
+        </span>
+      </button>
+    </header>
+  )
+}
+
+export default function Sidebar({ page, onNavigate, onOpenSettings }) {
+  const { image, name } = useProfileInfo()
 
   return (
     <>
@@ -31,7 +55,7 @@ export default function Sidebar({ page, onNavigate, onOpenSettings }) {
           <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-teal text-white">
             <Music size={18} />
           </div>
-          <p className="hidden font-serif text-[22px] font-semibold lg:block">Moodbot</p>
+          <p className="hidden font-serif text-[22px] font-semibold lg:block">Muse</p>
         </div>
 
         <nav className="flex flex-col gap-1.5">
@@ -66,7 +90,7 @@ export default function Sidebar({ page, onNavigate, onOpenSettings }) {
           title="Settings"
           className="flex items-center justify-center gap-2.5 rounded-[14px] py-1.5 text-left hover:bg-cream lg:-mx-2 lg:justify-start lg:px-2"
         >
-          {avatar('size-9')}
+          <Avatar image={image} name={name} size="size-9" />
           <div className="hidden min-w-0 lg:block">
             <p className="truncate text-sm font-semibold">{name}</p>
             <p className="mt-1 text-[13px] text-muted">Settings</p>
@@ -78,7 +102,7 @@ export default function Sidebar({ page, onNavigate, onOpenSettings }) {
         aria-label="Main"
         className="fixed inset-x-0 bottom-0 z-30 flex border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] md:hidden"
       >
-        {links.map(({ id, label, short, icon: Icon }) => {
+        {links.map(({ id, label, icon: Icon }) => {
           const on = page === id
           return (
             <button
@@ -92,20 +116,10 @@ export default function Sidebar({ page, onNavigate, onOpenSettings }) {
               }`}
             >
               <Icon size={20} />
-              {short}
+              {label}
             </button>
           )
         })}
-        <button
-          type="button"
-          onClick={onOpenSettings}
-          aria-haspopup="dialog"
-          aria-label="Settings"
-          className="flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 text-[11px] text-muted"
-        >
-          {avatar('size-5')}
-          Settings
-        </button>
       </nav>
     </>
   )

@@ -118,9 +118,9 @@ export default function OnboardingPage() {
   }
 
   const copy = {
-    welcome: ['Welcome to Moodbot', 'Tell it how you feel. It finds songs that fit your mood.'],
-    spotify: ['Connect Spotify', 'Moodbot uses Spotify to play songs and save playlists.'],
-    genres: ['Pick your genres', 'Choose what you like. Moodbot uses it when picking songs.'],
+    welcome: ['Welcome to Muse', 'Tell it how you feel. It finds songs that fit your mood.'],
+    spotify: ['Connect Spotify', 'Muse uses Spotify to play songs and save playlists.'],
+    genres: ['Pick your genres', 'Choose what you like. Muse uses it when picking songs.'],
     tour: ['Quick tour', 'Everything is in the sidebar.'],
   }
 
@@ -187,7 +187,7 @@ export default function OnboardingPage() {
         )}
         {last && (
           <button type="button" onClick={finishOnboarding} className={primary}>
-            Open Moodbot
+            Open Muse
           </button>
         )}
       </div>

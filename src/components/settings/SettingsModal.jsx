@@ -182,7 +182,7 @@ export default function SettingsModal({ onClose, onLogOut }) {
           <Card>
             <ToggleRow
               title="Use Spotify listening history"
-              detail="Helps Moodbot pick better songs"
+              detail="Helps Muse pick better songs"
               checked={prefs.listening}
               onChange={setPref('listening')}
             />

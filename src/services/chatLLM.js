@@ -12,7 +12,7 @@ const toApiMessages = (messages) => {
   return turns
 }
 
-export async function askMoodbot(messages) {
+export async function askMuse(messages) {
   if (!supabase) return null
   const turns = toApiMessages(messages)
   if (!turns.length) return null

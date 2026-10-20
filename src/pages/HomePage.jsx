@@ -221,12 +221,12 @@ function SeeAll({ onClick }) {
   )
 }
 
-function RecentlySaved({ savedSongs, isSaved, onSave, onNavigate }) {
+function RecentlySaved({ savedSongs, isSaved, onSave, onOpenLiked }) {
   const { status } = useSpotify()
   const songs = savedSongs.slice(0, 4)
 
   return (
-    <Section title="Recently saved" aside={songs.length > 0 && <SeeAll onClick={() => onNavigate('saved')} />}>
+    <Section title="Recently saved" aside={songs.length > 0 && <SeeAll onClick={onOpenLiked} />}>
       {songs.length ? (
         <div className="flex flex-col gap-3">
           {songs.map((song) => (
@@ -277,7 +277,7 @@ function YourPlaylists({ onNavigate, onOpenPlaylist }) {
   )
 }
 
-export default function HomePage({ savedSongs, isSaved, onSave, onNavigate }) {
+export default function HomePage({ savedSongs, isSaved, onSave, onNavigate, onOpenLiked }) {
   const { profile, playlists } = useSpotify()
   const { ratings } = useRatings()
   const [openPlaylistId, setOpenPlaylistId] = useState(null)
@@ -306,7 +306,7 @@ export default function HomePage({ savedSongs, isSaved, onSave, onNavigate }) {
 
       <div className="grid gap-5 lg:grid-cols-2">
         <WeekSnapshot />
-        <RecentlySaved savedSongs={savedSongs} isSaved={isSaved} onSave={onSave} onNavigate={onNavigate} />
+        <RecentlySaved savedSongs={savedSongs} isSaved={isSaved} onSave={onSave} onOpenLiked={onOpenLiked} />
       </div>
 
       <YourPlaylists onNavigate={onNavigate} onOpenPlaylist={setOpenPlaylistId} />

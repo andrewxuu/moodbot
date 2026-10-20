@@ -13,7 +13,7 @@ import { detectMood, getPicks, pickSongs } from '../picks'
 import { songs as sampleSongs } from '../data/data'
 import { moodKey, useFeedback } from '../feedback'
 import { chatDays, greetingText, loadChats, saveChat, todayKey } from '../data/sampleChats'
-import { askMoodbot } from '../services/chatLLM'
+import { askMuse } from '../services/chatLLM'
 import { buildMoodSongs } from '../lib/playlistMood'
 
 const moods = ['Calm', 'Hype', 'Focus', 'Sad', 'Happy']
@@ -22,7 +22,7 @@ const greeting = { id: 0, from: 'bot', text: greetingText }
 const SPOTIFY_REASON = 'Picked from your recent Spotify listening.'
 const wantsPlaylist = (text) => /\b(make|create|build|start|put together)\b.*\bplaylist\b/i.test(text)
 
-export default function ChatPage({ savedSongs, isSaved, onSave, onNavigate, onOpenPlaylist }) {
+export default function ChatPage({ savedSongs, isSaved, onSave, onOpenPlaylist, onOpenLiked }) {
   const { status, listening, liked, createPlaylist, addSongs } = useSpotify()
   const { forMood, ratingOf, rate } = useFeedback()
   const isSample = listening.length === 0
@@ -116,7 +116,7 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onNavigate, onOp
       return makePlaylist(mood)
     }
 
-    const llm = await askMoodbot([...messages, userMsg])
+    const llm = await askMuse([...messages, userMsg])
     if (!llm) return respond(detectMood(clean))
 
     const replyMsg = { id: nextId.current++, from: 'bot', text: llm.reply }
@@ -272,7 +272,7 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onNavigate, onOp
 
       <SavedPanel
         songs={savedSongs}
-        onSeeAll={() => onNavigate('saved')}
+        onSeeAll={onOpenLiked}
         drawerOpen={savedOpen}
         onCloseDrawer={() => setSavedOpen(false)}
       />

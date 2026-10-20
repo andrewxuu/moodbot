@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ArrowLeft, Clock, ExternalLink, Search } from 'lucide-react'
+import { ArrowLeft, Clock, ExternalLink, Heart, Search } from 'lucide-react'
 import PlaylistSongRow, { PLAYLIST_COLUMNS } from '../components/songs/PlaylistSongRow'
 import { getPlaylistSongs, NotOwnedError } from '../spotify/api'
 import { useSpotify } from '../spotify/useSpotify'
@@ -15,18 +15,20 @@ const totalLength = (songs) => {
   return `${Math.floor(minutes / 60)} hr ${minutes % 60} min`
 }
 
-export default function PlaylistDetail({ playlist, onBack, isSaved, onSave }) {
+export default function PlaylistDetail({ playlist, songs: fixedSongs, onBack, isSaved, onSave }) {
   const { profile, removeSong } = useSpotify()
   const notMine = profile?.id && playlist.ownerId && playlist.ownerId !== profile.id && !playlist.collaborative
-  const [state, setState] = useState(() =>
+  const fixed = Boolean(fixedSongs)
+  const [fetched, setState] = useState(() =>
     cache.has(playlist.id) ? { status: 'ready', songs: cache.get(playlist.id) } : { status: 'loading', songs: [] }
   )
+  const state = fixed ? { status: 'ready', songs: fixedSongs } : fetched
   const [query, setQuery] = useState('')
   const [removing, setRemoving] = useState(null)
-  const canRemove = !(profile?.id && playlist.ownerId && playlist.ownerId !== profile.id)
+  const canRemove = !fixed && !(profile?.id && playlist.ownerId && playlist.ownerId !== profile.id)
 
   useEffect(() => {
-    if (cache.has(playlist.id)) return
+    if (fixed || cache.has(playlist.id)) return
     if (notMine) {
       setState({ status: 'not-owned', songs: [] })
       return
@@ -43,7 +45,7 @@ export default function PlaylistDetail({ playlist, onBack, isSaved, onSave }) {
     return () => {
       cancelled = true
     }
-  }, [playlist.id, notMine])
+  }, [playlist.id, notMine, fixed])
 
   const copies = removing ? state.songs.filter((s) => s.id === removing.id).length : 0
 
@@ -100,7 +102,11 @@ export default function PlaylistDetail({ playlist, onBack, isSaved, onSave }) {
       </button>
 
       <div className="flex items-end gap-5">
-        {playlist.image ? (
+        {playlist.liked ? (
+          <div className="flex size-[140px] shrink-0 items-center justify-center rounded-[14px] bg-teal text-white">
+            <Heart size={56} fill="currentColor" />
+          </div>
+        ) : playlist.image ? (
           <img src={playlist.image} alt="" className="size-[140px] shrink-0 rounded-[14px] object-cover" />
         ) : (
           <div className="size-[140px] shrink-0 rounded-[14px] bg-art" />

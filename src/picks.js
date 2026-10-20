@@ -349,7 +349,7 @@ export async function getPicks({ top, library, pool, mood, mode, exclude = [], a
     const checks = await checkGenres(resolved.map((x) => x.song), prefs)
     const found = resolved.filter((_, i) => !checks[i].avoided)
     resolved.forEach((x, i) => checks[i].liked && likedHits.set(x.song.id, checks[i].liked))
-    console.debug('[moodbot] Last.fm picks', {
+    console.debug('[muse] Last.fm picks', {
       candidates: ranked.length,
       fromTags: fromTags.length,
       searched: toResolve.length,

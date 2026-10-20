@@ -1,12 +1,12 @@
 import { useState } from 'react'
-import { Check, Music, Plus, RefreshCw, Trash2 } from 'lucide-react'
+import { Check, Heart, Music, Plus, RefreshCw, Trash2 } from 'lucide-react'
 import { useSpotify } from '../spotify/useSpotify'
 import PlaylistDetail from './PlaylistDetail'
 import NewPlaylistForm from '../components/playlists/NewPlaylistForm'
 import ConfirmDelete from '../components/playlists/ConfirmDelete'
 import UndoBar from '../components/ui/UndoBar'
 
-export default function PlaylistsPage({ isSaved, onSave, initialOpenId = null }) {
+export default function PlaylistsPage({ savedSongs, isSaved, onSave, initialOpenId = null }) {
   const { status, error, profile, playlists, sync, connect, createPlaylist, removePlaylists, restorePlaylists } = useSpotify()
   const [openId, setOpenId] = useState(initialOpenId)
   const [creating, setCreating] = useState(false)
@@ -38,57 +38,80 @@ export default function PlaylistsPage({ isSaved, onSave, initialOpenId = null })
     setUndo(null)
     await restorePlaylists(lists, order).catch(() => {})
   }
-  const selected = playlists.find((p) => p.id === openId)
+  const likedPlaylist = { id: 'liked', name: 'Liked songs', count: savedSongs.length, liked: true }
+  const selected = openId === 'liked' ? likedPlaylist : playlists.find((p) => p.id === openId)
   const syncing = status === 'syncing'
   const needsSpotify = status === 'disconnected' || status === 'expired'
 
-  const body = () => {
-    if (playlists.length) {
-      return (
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-4 sm:grid-cols-[repeat(auto-fill,minmax(200px,260px))] sm:gap-6">
-          {playlists.map((p) => {
-            const mine = isMine(p)
-            const on = picked.includes(p.id)
-            return (
-              <button
-                key={p.id}
-                type="button"
-                disabled={editing && !mine}
-                aria-pressed={editing ? on : undefined}
-                onClick={() => (editing ? togglePick(p.id) : setOpenId(p.id))}
-                className={`block text-left ${editing && !mine ? 'opacity-50' : ''}`}
-              >
-                <div className={`relative rounded-[14px] ${on ? 'ring-2 ring-teal ring-offset-2 ring-offset-cream' : ''}`}>
-                  {p.image ? (
-                    <img src={p.image} alt="" className="aspect-square w-full rounded-[14px] object-cover sm:h-[220px] sm:aspect-auto" />
-                  ) : (
-                    <div className="aspect-square rounded-[14px] bg-art sm:aspect-auto sm:h-[220px]" />
-                  )}
-                  {editing && mine && (
-                    <span
-                      className={`absolute left-2.5 top-2.5 flex size-6 items-center justify-center rounded-full border-[1.5px] ${
-                        on ? 'border-teal bg-teal text-white' : 'border-line bg-surface'
-                      }`}
-                    >
-                      {on && <Check size={14} />}
-                    </span>
-                  )}
-                </div>
-                <p className="mt-2 truncate text-base font-semibold">{p.name}</p>
-                {p.count !== null && <p className="mt-2 text-[13px] text-muted">{p.count} songs</p>}
-              </button>
-            )
-          })}
-        </div>
-      )
-    }
+  const emptyNote = () => {
     if (syncing) return <p className="text-[15px] text-muted">Loading your playlists…</p>
     if (needsSpotify) return <p className="text-[15px] text-muted">Connect Spotify to see your playlists here.</p>
-    return <p className="text-[15px] text-muted">Your Spotify account doesn’t have any playlists yet.</p>
+    return <p className="text-[15px] text-muted">Your Spotify account doesn’t have any other playlists yet.</p>
   }
 
+  const body = () => (
+    <div className="flex flex-col gap-5">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-4 sm:grid-cols-[repeat(auto-fill,minmax(200px,260px))] sm:gap-6">
+        <button
+          type="button"
+          disabled={editing}
+          onClick={() => setOpenId('liked')}
+          className={`block text-left ${editing ? 'opacity-50' : ''}`}
+        >
+          <div className="flex aspect-square items-center justify-center rounded-[14px] bg-teal text-white sm:aspect-auto sm:h-[220px]">
+            <Heart size={56} fill="currentColor" />
+          </div>
+          <p className="mt-2 truncate text-base font-semibold">Liked songs</p>
+          <p className="mt-2 text-[13px] text-muted">{savedSongs.length} songs</p>
+        </button>
+        {playlists.map((p) => {
+          const mine = isMine(p)
+          const on = picked.includes(p.id)
+          return (
+            <button
+              key={p.id}
+              type="button"
+              disabled={editing && !mine}
+              aria-pressed={editing ? on : undefined}
+              onClick={() => (editing ? togglePick(p.id) : setOpenId(p.id))}
+              className={`block text-left ${editing && !mine ? 'opacity-50' : ''}`}
+            >
+              <div className={`relative rounded-[14px] ${on ? 'ring-2 ring-teal ring-offset-2 ring-offset-cream' : ''}`}>
+                {p.image ? (
+                  <img src={p.image} alt="" className="aspect-square w-full rounded-[14px] object-cover sm:h-[220px] sm:aspect-auto" />
+                ) : (
+                  <div className="aspect-square rounded-[14px] bg-art sm:aspect-auto sm:h-[220px]" />
+                )}
+                {editing && mine && (
+                  <span
+                    className={`absolute left-2.5 top-2.5 flex size-6 items-center justify-center rounded-full border-[1.5px] ${
+                      on ? 'border-teal bg-teal text-white' : 'border-line bg-surface'
+                    }`}
+                  >
+                    {on && <Check size={14} />}
+                  </span>
+                )}
+              </div>
+              <p className="mt-2 truncate text-base font-semibold">{p.name}</p>
+              {p.count !== null && <p className="mt-2 text-[13px] text-muted">{p.count} songs</p>}
+            </button>
+          )
+        })}
+      </div>
+      {!playlists.length && emptyNote()}
+    </div>
+  )
+
   if (selected) {
-    return <PlaylistDetail playlist={selected} onBack={() => setOpenId(null)} isSaved={isSaved} onSave={onSave} />
+    return (
+      <PlaylistDetail
+        playlist={selected}
+        songs={selected.liked ? savedSongs : undefined}
+        onBack={() => setOpenId(null)}
+        isSaved={isSaved}
+        onSave={onSave}
+      />
+    )
   }
 
   return (

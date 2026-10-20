@@ -8,7 +8,7 @@ export default function CardFrame({ children }) {
           <div className="flex size-9 items-center justify-center rounded-full bg-teal text-white">
             <Music size={18} />
           </div>
-          <p className="font-serif text-[22px] font-semibold">Moodbot</p>
+          <p className="font-serif text-[22px] font-semibold">Muse</p>
         </div>
         <div className="flex w-full flex-col gap-5 rounded-[20px] border border-line bg-surface p-6 sm:p-9">{children}</div>
       </div>

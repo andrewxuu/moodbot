@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import Sidebar from './components/layout/Sidebar'
+import Sidebar, { MobileHeader } from './components/layout/Sidebar'
 import SettingsModal from './components/settings/SettingsModal'
 import { ThemeProvider } from './theme'
 import { RatingsProvider } from './ratings'
@@ -7,7 +7,6 @@ import CallbackPage from './pages/CallbackPage'
 import ChatPage from './pages/ChatPage'
 import HomePage from './pages/HomePage'
 import MoodPage from './pages/MoodPage'
-import SavedSongsPage from './pages/SavedSongsPage'
 import PlaylistsPage from './pages/PlaylistsPage'
 import { SpotifyProvider, useSpotify } from './spotify/useSpotify'
 import { PlayerProvider } from './spotify/usePlayer'
@@ -55,10 +54,10 @@ function Gate() {
   if (!ready) return <div className="min-h-screen bg-cream" />
   if (!user && !guest && onboarded) return <AuthPage />
   if (!onboarded || replay) return <OnboardingPage />
-  return <Moodbot />
+  return <Muse />
 }
 
-function Moodbot() {
+function Muse() {
   const { status, liked, disconnect, likeSong, unlikeSong } = useSpotify()
   const { signOut } = useAccount()
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -107,18 +106,20 @@ function Moodbot() {
 
   const shared = { savedSongs, isSaved, onSave: toggleSave }
   const pages = {
-    home: <HomePage {...shared} onNavigate={navigate} />,
-    chat: <ChatPage {...shared} onNavigate={navigate} onOpenPlaylist={openPlaylist} />,
+    home: <HomePage {...shared} onNavigate={navigate} onOpenLiked={() => openPlaylist('liked')} />,
+    chat: <ChatPage {...shared} onNavigate={navigate} onOpenPlaylist={openPlaylist} onOpenLiked={() => openPlaylist('liked')} />,
     mood: <MoodPage savedSongs={savedSongs} />,
-    saved: <SavedSongsPage {...shared} />,
     playlists: <PlaylistsPage {...shared} initialOpenId={openPlaylistId} />,
   }
 
   return (
     <div className="flex h-dvh bg-cream">
       <Sidebar page={page} onNavigate={navigate} onOpenSettings={() => setSettingsOpen(true)} />
-      <main className="min-w-0 flex-1 overflow-y-auto pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0">
-        <div className="mx-auto h-full max-w-[1680px]">{pages[page]}</div>
+      <main className="flex min-w-0 flex-1 flex-col pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0">
+        <MobileHeader onOpenSettings={() => setSettingsOpen(true)} />
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className="mx-auto h-full max-w-[1680px]">{pages[page]}</div>
+        </div>
       </main>
       {settingsOpen && <SettingsModal onClose={closeSettings} onLogOut={logOut} />}
     </div>

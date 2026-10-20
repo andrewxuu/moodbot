@@ -25,7 +25,7 @@ export default function CallbackPage({ onDone }) {
             onClick={() => goHome(onDone)}
             className="mt-4 h-11 rounded-full bg-teal px-5 text-[15px] text-white"
           >
-            Back to Moodbot
+            Back to Muse
           </button>
         </div>
       ) : (
