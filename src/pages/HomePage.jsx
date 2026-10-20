@@ -1,5 +1,4 @@
 import { useSpotify } from '../spotify/useSpotify'
-import { checkInFor, daysBetween } from '../data/sampleMoods'
 import { useState } from 'react'
 import { CircleCheck } from 'lucide-react'
 import { moodBg } from '../lib/moodMonth'
@@ -144,75 +143,6 @@ function MoodRating() {
   )
 }
 
-function WeekSnapshot() {
-  useRatings()
-  const now = new Date()
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  const start = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6)
-
-  const days = daysBetween(start, today).map((date) => {
-    const checkIn = checkInFor(date, now)
-    return { date, avg: checkIn ? checkIn.rating : null, count: checkIn ? checkIn.count : 0 }
-  })
-
-  const all = days.flatMap((d) => (d.avg === null ? [] : [d]))
-  const weekAvg = all.length ? all.reduce((sum, d) => sum + d.avg, 0) / all.length : null
-
-  const describe = ({ date, avg, count }) => {
-    const day = date.toLocaleDateString('en-US', { weekday: 'long' })
-    if (avg === null) return `${day}: no check-ins`
-    return `${day}: ${avg.toFixed(1)}/10, ${stressLabel(Math.round(avg))}, ${count} check-in${count === 1 ? '' : 's'}`
-  }
-
-  return (
-    <Section
-      title="This week"
-      aside={weekAvg !== null ? `Avg ${weekAvg.toFixed(1)}/10 · ${stressLabel(Math.round(weekAvg))}` : null}
-    >
-      {all.length ? (
-        <>
-          <div className="flex h-[110px] items-end gap-1.5">
-            {days.map((d) =>
-              d.avg !== null ? (
-                <span
-                  key={d.date.toISOString()}
-                  title={describe(d)}
-                  aria-label={describe(d)}
-                  role="img"
-                  style={{ height: Math.max(8, d.avg * 11) }}
-                  className={`flex-1 rounded-b-[2px] rounded-t-[4px] ${moodBg[ratingMood(Math.round(d.avg))]}`}
-                />
-              ) : (
-                <span
-                  key={d.date.toISOString()}
-                  title={describe(d)}
-                  aria-label={describe(d)}
-                  role="img"
-                  className="h-5 flex-1 rounded-[4px] border border-dashed border-line"
-                />
-              )
-            )}
-          </div>
-          <div className="flex gap-1.5 text-center text-[11px] text-muted">
-            {days.map(({ date }) => (
-              <span key={date.toISOString()} className="flex-1">
-                {date.toLocaleDateString('en-US', { weekday: 'narrow' })}
-              </span>
-            ))}
-          </div>
-          <p className="text-xs text-muted">
-            {all.reduce((sum, d) => sum + d.count, 0)} check-ins on {all.length} of 7 days
-          </p>
-        </>
-      ) : (
-        <div className="flex h-[140px] items-center justify-center rounded-[10px] border border-dashed border-line px-4 text-center text-sm text-muted">
-          No check-ins this week yet. Rate your stress above to start your week.
-        </div>
-      )}
-    </Section>
-  )
-}
-
 function SeeAll({ onClick }) {
   return (
     <button type="button" onClick={onClick} className="text-[13px] font-semibold text-teal hover:underline">
@@ -292,7 +222,7 @@ export default function HomePage({ savedSongs, isSaved, onSave, onNavigate, onOp
   }
 
   return (
-    <section className="flex flex-col gap-5 px-4 py-5 md:px-8 md:py-8 xl:px-10">
+    <section className="mx-auto flex w-full max-w-[640px] flex-col gap-5 px-4 py-5 md:px-8 md:py-10">
       <div>
         <h1 className="font-serif text-[30px] font-semibold">{firstName ? `${greeting}, ${firstName}` : greeting}</h1>
         <p className="mt-1 text-[15px] text-muted">How are you feeling right now?</p>
@@ -304,10 +234,7 @@ export default function HomePage({ savedSongs, isSaved, onSave, onNavigate, onOp
         <PlaylistPick mood={mood} savedSongs={savedSongs} onOpen={setOpenPlaylistId} />
       </Section>
 
-      <div className="grid gap-5 lg:grid-cols-2">
-        <WeekSnapshot />
-        <RecentlySaved savedSongs={savedSongs} isSaved={isSaved} onSave={onSave} onOpenLiked={onOpenLiked} />
-      </div>
+      <RecentlySaved savedSongs={savedSongs} isSaved={isSaved} onSave={onSave} onOpenLiked={onOpenLiked} />
 
       <YourPlaylists onNavigate={onNavigate} onOpenPlaylist={setOpenPlaylistId} />
     </section>
