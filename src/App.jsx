@@ -13,6 +13,7 @@ import { PlayerProvider } from './spotify/usePlayer'
 import { FeedbackProvider } from './feedback'
 import { AccountProvider, useAccount } from './account'
 import { cloudPush } from './lib/cloudSync'
+import { useDevMode } from './lib/devMode'
 import AuthPage from './pages/AuthPage'
 import OnboardingPage from './pages/OnboardingPage'
 
@@ -61,6 +62,7 @@ function Muse() {
   const { status, liked, disconnect, likeSong, unlikeSong } = useSpotify()
   const { signOut } = useAccount()
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const dev = useDevMode()
   const closeSettings = useCallback(() => setSettingsOpen(false), [])
   const logOut = () => {
     disconnect()
@@ -118,7 +120,9 @@ function Muse() {
       <main className="flex min-w-0 flex-1 flex-col pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0">
         <MobileHeader onOpenSettings={() => setSettingsOpen(true)} />
         <div className="min-h-0 flex-1 overflow-y-auto">
-          <div className="mx-auto h-full max-w-[1680px]">{pages[page]}</div>
+          <div key={`${dev.on}-${dev.sample}`} className="mx-auto h-full max-w-[1680px]">
+            {pages[page]}
+          </div>
         </div>
       </main>
       {settingsOpen && <SettingsModal onClose={closeSettings} onLogOut={logOut} />}

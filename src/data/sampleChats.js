@@ -1,4 +1,5 @@
 import { dayKey, seeded } from './sampleMoods'
+import { sampleDataOn } from '../lib/devMode'
 
 const STORAGE_KEY = 'moodbot:chats'
 const DAYS_BACK = 14
@@ -58,7 +59,7 @@ export function chatDays(pool, reason) {
   for (let back = 0; back <= DAYS_BACK; back++) {
     const date = new Date(now.getFullYear(), now.getMonth(), now.getDate() - back)
     const key = dayKey(date)
-    const messages = saved[key] ?? (back === 0 ? null : sampleChat(date, pool, reason))
+    const messages = saved[key] ?? (back === 0 || !sampleDataOn() ? null : sampleChat(date, pool, reason))
     if (back === 0 || messages) days.push({ key, date, messages })
   }
   return days

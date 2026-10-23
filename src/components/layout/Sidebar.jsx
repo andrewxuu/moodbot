@@ -1,6 +1,13 @@
 import { ChartColumn, House, List, MessageCircle, Music } from 'lucide-react'
 import { useSpotify } from '../../spotify/useSpotify'
 import { useAccount } from '../../account'
+import { useDevMode } from '../../lib/devMode'
+
+function DevBadge() {
+  const { on } = useDevMode()
+  if (!on) return null
+  return <span className="rounded-full bg-mood-okay px-2.5 py-0.5 text-xs font-semibold text-white">Dev mode</span>
+}
 
 const links = [
   { id: 'home', label: 'Home', icon: House },
@@ -41,6 +48,9 @@ export function MobileHeader({ onOpenSettings }) {
           <Avatar image={image} name={name} size="size-10" />
         </span>
       </button>
+      <div className="ml-2">
+        <DevBadge />
+      </div>
     </header>
   )
 }
@@ -56,6 +66,9 @@ export default function Sidebar({ page, onNavigate, onOpenSettings }) {
             <Music size={18} />
           </div>
           <p className="hidden font-serif text-[22px] font-semibold lg:block">Muse</p>
+        </div>
+        <div className="-mt-4 flex justify-center lg:justify-start">
+          <DevBadge />
         </div>
 
         <nav className="flex flex-col gap-1.5">

@@ -14,6 +14,7 @@ import { songs as sampleSongs } from '../data/data'
 import { moodKey, useFeedback } from '../feedback'
 import { chatDays, greetingText, loadChats, saveChat, todayKey } from '../data/sampleChats'
 import { askMuse } from '../services/chatLLM'
+import { sampleDataOn } from '../lib/devMode'
 import { buildMoodSongs } from '../lib/playlistMood'
 
 const moods = ['Calm', 'Hype', 'Focus', 'Sad', 'Happy']
@@ -25,7 +26,8 @@ const wantsPlaylist = (text) => /\b(make|create|build|start|put together)\b.*\bp
 export default function ChatPage({ savedSongs, isSaved, onSave, onOpenPlaylist, onOpenLiked }) {
   const { status, listening, liked, createPlaylist, addSongs } = useSpotify()
   const { forMood, ratingOf, rate } = useFeedback()
-  const isSample = listening.length === 0
+  const noMusic = listening.length === 0
+  const isSample = noMusic && sampleDataOn()
   const pool = isSample ? sampleSongs : listening
 
   const [messages, setMessages] = useState(() => loadChats()[todayKey()] ?? [greeting])
@@ -53,6 +55,10 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onOpenPlaylist, 
 
   const respond = async (mood, exclude = [], before = []) => {
     const id = nextId.current++
+    if (noMusic && !isSample) {
+      const text = 'Connect Spotify in settings so I can find songs for you.'
+      return setMessages((m) => [...m, ...before, { id, from: 'bot', text }])
+    }
     setMessages((m) => [...m, ...before, { id, from: 'bot', pending: true }])
 
     const key = moodKey(mood)

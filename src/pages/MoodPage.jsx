@@ -9,6 +9,7 @@ import MoodWeekChart from '../components/mood/MoodWeekChart'
 import MoodWeeks from '../components/mood/MoodWeeks'
 import SegmentedSwitch from '../components/ui/SegmentedSwitch'
 import { moodLevels } from '../data/data'
+import { sampleDataOn } from '../lib/devMode'
 import { checkInFor, checkInsBetween, daysBetween } from '../data/sampleMoods'
 import { periodStats } from '../lib/moodStats'
 import { chatStats, songStats } from '../lib/musicStats'
@@ -114,7 +115,7 @@ export default function MoodPage({ savedSongs = [] }) {
               {range === 'Month' && (
                 <SegmentedSwitch size="sm" options={['Weeks', 'Calendar', 'Daily']} value={monthView} onChange={setMonthView} />
               )}
-              <p className="text-xs text-muted">Past days include sample data</p>
+              {sampleDataOn() && <p className="text-xs text-muted">Past days include sample data</p>}
             </div>
           </div>
           {range === 'Week' ? (

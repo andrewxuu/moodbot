@@ -5,6 +5,7 @@ import Toggle from '../ui/Toggle'
 import { useSpotify } from '../../spotify/useSpotify'
 import { useTheme } from '../../theme'
 import { useAccount } from '../../account'
+import { setDevMode, setSampleData, useDevMode } from '../../lib/devMode'
 
 const themes = [
   { id: 'light', label: 'Light', icon: Sun },
@@ -40,6 +41,9 @@ export default function SettingsModal({ onClose, onLogOut }) {
   const { user, guest, name: accountName, startReplay } = useAccount()
   const connected = status === 'connected' || status === 'syncing'
   const closeRef = useRef(null)
+  const dev = useDevMode()
+  const taps = useRef({ count: 0, timer: null })
+  const [devNote, setDevNote] = useState('')
 
   const { theme, setTheme } = useTheme()
   const [prefs, setPrefs] = useState({ reminder: true, suggestions: true, listening: true, chatHistory: false })
@@ -58,6 +62,18 @@ export default function SettingsModal({ onClose, onLogOut }) {
 
   const name = profile?.name ?? accountName ?? 'Guest'
 
+  const tapTitle = () => {
+    const t = taps.current
+    t.count += 1
+    clearTimeout(t.timer)
+    t.timer = setTimeout(() => (t.count = 0), 2000)
+    if (t.count < 7) return
+    t.count = 0
+    setDevMode(!dev.on)
+    setDevNote(dev.on ? 'Dev mode off' : 'Dev mode on')
+    setTimeout(() => setDevNote(''), 2500)
+  }
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
@@ -70,7 +86,7 @@ export default function SettingsModal({ onClose, onLogOut }) {
         className="flex max-h-[calc(100vh-32px)] w-full max-w-[560px] flex-col gap-5 overflow-y-auto rounded-[20px] bg-surface p-7"
       >
         <div className="flex items-center justify-between">
-          <h2 id="settings-title" className="font-serif text-[28px] font-semibold">
+          <h2 id="settings-title" onClick={tapTitle} className="select-none font-serif text-[28px] font-semibold">
             Settings
           </h2>
           <button
@@ -120,17 +136,6 @@ export default function SettingsModal({ onClose, onLogOut }) {
                 </button>
               )}
             </div>
-
-            <button
-              type="button"
-              onClick={() => {
-                onClose()
-                startReplay()
-              }}
-              className="w-full px-4 py-3.5 text-left text-[15px] font-semibold hover:bg-cream"
-            >
-              Replay onboarding
-            </button>
 
             {(connected || user || guest) && (
               <button
@@ -193,6 +198,42 @@ export default function SettingsModal({ onClose, onLogOut }) {
             </button>
           </Card>
         </Group>
+
+        {devNote && (
+          <p role="status" className="text-center text-[13px] text-muted">
+            {devNote}
+          </p>
+        )}
+
+        {dev.on && (
+          <Group title="Developer">
+            <Card>
+              <button
+                type="button"
+                onClick={() => {
+                  onClose()
+                  startReplay()
+                }}
+                className="w-full px-4 py-3.5 text-left text-[15px] font-semibold hover:bg-cream"
+              >
+                Replay onboarding
+              </button>
+              <ToggleRow
+                title="Sample data"
+                detail="Fake check-ins, chats and songs"
+                checked={dev.sample}
+                onChange={setSampleData}
+              />
+              <button
+                type="button"
+                onClick={() => setDevMode(false)}
+                className="w-full px-4 py-3.5 text-left text-[15px] font-semibold text-mood-awful hover:bg-cream"
+              >
+                Turn off dev mode
+              </button>
+            </Card>
+          </Group>
+        )}
       </div>
     </div>
   )

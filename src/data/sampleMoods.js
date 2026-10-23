@@ -1,3 +1,5 @@
+import { sampleDataOn } from '../lib/devMode'
+
 export const moodScore = { great: 1, good: 2, okay: 3, low: 4, awful: 5 }
 export const scoreMood = ['', 'great', 'good', 'okay', 'low', 'awful']
 
@@ -96,7 +98,7 @@ export function checkInFor(date, today = new Date()) {
   if (day > now) return null
   const logged = realByDay.get(dayKey(day))
   if (logged?.length) return realCheckIn(day, logged)
-  if (day >= now) return null
+  if (day >= now || !sampleDataOn()) return null
   const sample = sampleCheckIn(day, today)
   if (!sample) return null
   return { ...sample, rating: sample.score * 2, count: 1, real: false, meta: `${sample.songs} songs picked` }
