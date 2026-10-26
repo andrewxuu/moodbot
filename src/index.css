@@ -76,3 +76,32 @@
 body {
   @apply bg-cream font-sans text-ink;
 }
+
+.typing-dot {
+  animation: typing-wobble 1.2s ease-in-out infinite;
+}
+
+@keyframes typing-wobble {
+  0%, 60%, 100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  30% {
+    transform: translateY(-6px);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .typing-dot {
+    animation-name: typing-pulse;
+  }
+  @keyframes typing-pulse {
+    0%, 60%, 100% {
+      opacity: 0.35;
+    }
+    30% {
+      opacity: 1;
+    }
+  }
+}

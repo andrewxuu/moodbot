@@ -3,19 +3,95 @@ import { normalize } from '../lib/filters'
 
 const BASE = 'https://api.spotify.com/v1'
 
-async function request(pathOrUrl, { method = 'GET', body } = {}) {
+const MAX_ACTIVE = 3
+const SHORT_WAIT = 5
+const DEFAULT_COOLDOWN = 30
+const MAX_COOLDOWN = 3600
+const COOLDOWN_KEY = 'moodbot:spotify-cooldown'
+const CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID
+
+let active = 0
+const waiting = []
+const inflight = new Map()
+
+const takeSlot = () =>
+  new Promise((resolve) => {
+    if (active < MAX_ACTIVE) {
+      active++
+      resolve()
+    } else {
+      waiting.push(resolve)
+    }
+  })
+
+const freeSlot = () => {
+  const next = waiting.shift()
+  if (next) next()
+  else active--
+}
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
+function readCooldown() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(COOLDOWN_KEY))
+    return saved?.clientId === CLIENT_ID ? saved : null
+  } catch {
+    return null
+  }
+}
+
+function startCooldown(seconds, quota) {
+  try {
+    localStorage.setItem(COOLDOWN_KEY, JSON.stringify({ until: Date.now() + seconds * 1000, quota, clientId: CLIENT_ID }))
+  } catch {
+    return
+  }
+}
+
+export const cooldownLeft = () => Math.max(0, (readCooldown()?.until ?? 0) - Date.now())
+
+function waitText(ms) {
+  const minutes = Math.ceil(ms / 60000)
+  if (minutes <= 1) return 'a minute'
+  if (minutes < 60) return `${minutes} minutes`
+  return `${Math.ceil(minutes / 60)} hours`
+}
+
+function busyError(ms, quota = Boolean(readCooldown()?.quota)) {
+  const error = new Error(
+    quota
+      ? `Spotify’s usage limit for this app was reached. Try again in about ${waitText(ms)}.`
+      : `Spotify asked Muse to slow down. Try again in about ${waitText(ms)}.`
+  )
+  error.status = 429
+  error.quota = quota
+  error.cooldown = true
+  error.retryAfter = Math.ceil(ms / 1000)
+  return error
+}
+
+async function execute(url, method, body, attempt = 0) {
+  const left = cooldownLeft()
+  if (left > 0) throw busyError(left)
+
   const token = await getAccessToken()
   if (!token) throw new ReconnectError()
 
-  const url = pathOrUrl.startsWith('http') ? pathOrUrl : BASE + pathOrUrl
-  const res = await fetch(url, {
-    method,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      ...(body && { 'Content-Type': 'application/json' }),
-    },
-    body: body && JSON.stringify(body),
-  })
+  await takeSlot()
+  let res
+  try {
+    res = await fetch(url, {
+      method,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        ...(body && { 'Content-Type': 'application/json' }),
+      },
+      body: body && JSON.stringify(body),
+    })
+  } finally {
+    freeSlot()
+  }
 
   if (res.status === 401) {
     logout()
@@ -23,15 +99,15 @@ async function request(pathOrUrl, { method = 'GET', body } = {}) {
   }
   if (res.status === 429) {
     const data = await res.json().catch(() => ({}))
-    const busy = new Error(
-      data.error?.reason === 'QUOTA_EXCEEDED'
-        ? 'Spotify’s usage limit for this app was reached. Try again later.'
-        : 'Spotify is busy. Wait a moment, then try again.'
-    )
-    busy.status = 429
-    busy.quota = data.error?.reason === 'QUOTA_EXCEEDED'
-    busy.retryAfter = Number(res.headers.get('Retry-After')) || 2
-    throw busy
+    const quota = data.error?.reason === 'QUOTA_EXCEEDED'
+    const header = Number(res.headers.get('Retry-After')) || 0
+    if (header && header <= SHORT_WAIT && attempt < 2 && !quota) {
+      await sleep(header * 1000)
+      return execute(url, method, body, attempt + 1)
+    }
+    const seconds = Math.min(MAX_COOLDOWN, header || DEFAULT_COOLDOWN)
+    startCooldown(seconds, quota)
+    throw busyError(seconds * 1000, quota)
   }
   if (!res.ok) {
     const error = new Error(`Spotify request failed (${res.status}). Try again.`)
@@ -41,6 +117,19 @@ async function request(pathOrUrl, { method = 'GET', body } = {}) {
 
   const text = await res.text()
   return text ? JSON.parse(text) : null
+}
+
+async function request(pathOrUrl, { method = 'GET', body } = {}) {
+  const url = pathOrUrl.startsWith('http') ? pathOrUrl : BASE + pathOrUrl
+  if (method !== 'GET') return execute(url, method, body)
+
+  if (!inflight.has(url)) {
+    const run = execute(url, method, body)
+    const clear = () => inflight.delete(url)
+    run.then(clear, clear)
+    inflight.set(url, run)
+  }
+  return inflight.get(url)
 }
 
 async function collect(path, max) {
@@ -73,8 +162,8 @@ export async function getProfile() {
   return { id: me.id, name: me.display_name || me.id, image: image?.url }
 }
 
-export async function getLikedSongs(max = 200) {
-  const items = await collect('/me/tracks?limit=50', max)
+export async function getLikedSongs(max = 200, offset = 0) {
+  const items = await collect(`/me/tracks?limit=50&offset=${offset}`, max)
   return items.filter((i) => i.track?.id).map((i) => toSong(i.track, 'spotify'))
 }
 
@@ -118,6 +207,13 @@ async function libraryWrite(id, method) {
     if (err.code === 'scope' || (err.status !== 400 && err.status !== 404)) throw err
     await write('/me/tracks', { ids: [id] }, method)
   }
+}
+
+export async function startPlayback(deviceId, uris, position = 0) {
+  await request(`/me/player/play?device_id=${encodeURIComponent(deviceId)}`, {
+    method: 'PUT',
+    body: { uris, offset: { position } },
+  })
 }
 
 export const likeTrack = (id) => libraryWrite(id, 'PUT')

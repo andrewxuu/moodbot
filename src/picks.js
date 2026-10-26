@@ -140,7 +140,7 @@ async function searchWithRetry(candidate) {
   try {
     return await searchTrack(candidate.title, candidate.artist)
   } catch (err) {
-    if (err.status !== 429 || err.quota) throw err
+    if (err.status !== 429 || err.quota || err.cooldown) throw err
     await pause(Math.min(5, err.retryAfter ?? 2) * 1000)
     return searchTrack(candidate.title, candidate.artist)
   }
@@ -153,7 +153,7 @@ async function resolveOnSpotify(candidates, knownIds, skip, { stopAt = Infinity,
     const settled = await Promise.allSettled(candidates.slice(i, i + 4).map(searchWithRetry))
     hits += settled.filter((r) => r.status === 'fulfilled' && r.value).length
     results.push(...settled)
-    if (settled.some((r) => r.status === 'rejected' && r.reason?.quota)) break
+    if (settled.some((r) => r.status === 'rejected' && (r.reason?.quota || r.reason?.cooldown))) break
   }
   if (trace) {
     const failed = results.filter((r) => r.status === 'rejected')

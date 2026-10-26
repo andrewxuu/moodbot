@@ -1,7 +1,6 @@
-import { Heart, Minus, X } from 'lucide-react'
+import { Heart, Minus } from 'lucide-react'
 import AlbumArt from './AlbumArt'
 import IconButton from '../ui/IconButton'
-import SpotifyEmbed from './SpotifyEmbed'
 import { usePlayer } from '../../spotify/usePlayer'
 
 export const PLAYLIST_COLUMNS =
@@ -15,26 +14,16 @@ const formatDuration = (ms) => {
 const formatDate = (iso) =>
   iso ? new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''
 
-export default function PlaylistSongRow({ song, index, saved, onSave, onRemove }) {
-  const { openKey, open, close } = usePlayer()
-  const key = `playlist:${song.id}:${index}`
-
-  if (openKey === key) {
-    return (
-      <div className="flex items-center gap-3 rounded-[14px] border border-line bg-surface px-3.5 py-2.5">
-        <SpotifyEmbed uri={song.uri} />
-        <IconButton icon={X} label="Close player" onClick={close} />
-      </div>
-    )
-  }
+export default function PlaylistSongRow({ song, index, saved, onSave, onRemove, onPlay }) {
+  const { currentId } = usePlayer()
 
   return (
     <div className={`${PLAYLIST_COLUMNS} rounded-[14px] border border-line bg-surface px-3.5 py-2.5`}>
       <span className="text-sm text-muted">{index + 1}</span>
       <div className="flex min-w-0 items-center gap-3">
-        <AlbumArt song={song} onPlay={() => open(key)} />
+        <AlbumArt song={song} onPlay={onPlay} />
         <div className="min-w-0">
-          <p className="truncate text-[15px] font-semibold">{song.title}</p>
+          <p className={`truncate text-[15px] font-semibold ${currentId === song.id ? 'text-teal' : ''}`}>{song.title}</p>
           <p className="mt-0.5 truncate text-[13px] text-muted">{song.artist}</p>
         </div>
       </div>

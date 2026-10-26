@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Sidebar, { MobileHeader } from './components/layout/Sidebar'
+import MiniPlayer from './components/player/MiniPlayer'
 import SettingsModal from './components/settings/SettingsModal'
 import { ThemeProvider } from './theme'
 import { RatingsProvider } from './ratings'
@@ -9,7 +10,7 @@ import HomePage from './pages/HomePage'
 import MoodPage from './pages/MoodPage'
 import PlaylistsPage from './pages/PlaylistsPage'
 import { SpotifyProvider, useSpotify } from './spotify/useSpotify'
-import { PlayerProvider } from './spotify/usePlayer'
+import { PlayerProvider, usePlayer } from './spotify/usePlayer'
 import { FeedbackProvider } from './feedback'
 import { AccountProvider, useAccount } from './account'
 import { AppearanceProvider } from './appearance'
@@ -64,6 +65,7 @@ function Gate() {
 function Muse() {
   const { status, liked, disconnect, likeSong, unlikeSong } = useSpotify()
   const { signOut } = useAccount()
+  const { visible: playerVisible } = usePlayer()
   const [settingsOpen, setSettingsOpen] = useState(false)
   const dev = useDevMode()
   const closeSettings = useCallback(() => setSettingsOpen(false), [])
@@ -120,13 +122,18 @@ function Muse() {
   return (
     <div className="flex h-dvh bg-cream">
       <Sidebar page={page} onNavigate={navigate} onOpenSettings={() => setSettingsOpen(true)} />
-      <main className="flex min-w-0 flex-1 flex-col pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0">
+      <main
+        className={`flex min-w-0 flex-1 flex-col md:pb-0 ${
+          playerVisible ? 'pb-[calc(8rem+env(safe-area-inset-bottom))]' : 'pb-[calc(3.5rem+env(safe-area-inset-bottom))]'
+        }`}
+      >
         <MobileHeader onOpenSettings={() => setSettingsOpen(true)} />
         <div className="min-h-0 flex-1 overflow-y-auto">
           <div key={`${dev.on}-${dev.sample}`} className="mx-auto h-full max-w-[1680px]">
             {pages[page]}
           </div>
         </div>
+        <MiniPlayer />
       </main>
       {settingsOpen && <SettingsModal onClose={closeSettings} onLogOut={logOut} />}
     </div>

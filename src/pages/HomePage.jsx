@@ -30,14 +30,31 @@ function Section({ title, aside, children, className = '' }) {
 const timeOf = (iso) => new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
 const isToday = (iso) => new Date(iso).toDateString() === new Date().toDateString()
 
-function MoodRating() {
+const MOOD_BG = {
+  great: 'bg-mood-great',
+  good: 'bg-mood-good',
+  okay: 'bg-mood-okay',
+  low: 'bg-mood-low',
+  awful: 'bg-mood-awful',
+}
+
+function MoodRating({ onNavigate }) {
   const { ratings, addRating, updateRating } = useRatings()
   const [currentId, setCurrentId] = useState(null)
   const [draft, setDraft] = useState('')
   const [noteSaved, setNoteSaved] = useState(false)
 
   const current = ratings.find((r) => r.id === currentId)
-  const earlier = ratings.filter((r) => r.id !== currentId && isToday(r.at))
+  const todayAll = ratings.filter((r) => isToday(r.at)).reverse()
+  const first = todayAll[0]
+  const last = todayAll.at(-1)
+  const trend = !last
+    ? ''
+    : todayAll.length === 1
+      ? `${stressLabel(last.rating)} at ${timeOf(last.at)}`
+      : stressLabel(first.rating) === stressLabel(last.rating)
+        ? `Steady at ${stressLabel(last.rating)}`
+        : `Started ${stressLabel(first.rating)}, now ${stressLabel(last.rating)}`
 
   const pick = (rating) => {
     if (current) {
@@ -125,15 +142,23 @@ function MoodRating() {
         </div>
       )}
 
-      {earlier.length > 0 && (
-        <p className="text-xs text-muted">
-          {current ? 'Earlier today' : 'Today'}:{' '}
-          {earlier
-            .slice()
-            .reverse()
-            .map((r) => `${r.rating} at ${timeOf(r.at)}`)
-            .join(', ')}
-        </p>
+      {todayAll.length > (current ? 1 : 0) && (
+        <div className="flex flex-col gap-2 border-t border-line pt-3">
+          <div className="flex items-baseline justify-between gap-3">
+            <h3 className="text-sm font-semibold">
+              {todayAll.length} check-in{todayAll.length === 1 ? '' : 's'} today
+            </h3>
+            <button type="button" onClick={() => onNavigate('mood')} className="text-[13px] font-semibold text-teal hover:underline">
+              See all in Stats
+            </button>
+          </div>
+          <div role="img" aria-label={todayAll.map((r) => `${stressLabel(r.rating)} at ${timeOf(r.at)}`).join(', ')} className="flex gap-1">
+            {todayAll.map((r) => (
+              <span key={r.id} title={`${stressLabel(r.rating)} at ${timeOf(r.at)}`} className={`h-2 flex-1 rounded-full ${MOOD_BG[ratingMood(r.rating)]}`} />
+            ))}
+          </div>
+          <p className="text-[13px] text-muted">{trend}</p>
+        </div>
       )}
     </Section>
   )
@@ -156,7 +181,7 @@ function RecentlySaved({ savedSongs, isSaved, onSave, onOpenLiked }) {
       {songs.length ? (
         <div className="flex flex-col gap-3">
           {songs.map((song) => (
-            <SongRow key={`${song.source}-${song.id}`} song={song} slot="home" saved={isSaved(song.id)} onSave={onSave} />
+            <SongRow key={`${song.source}-${song.id}`} song={song} saved={isSaved(song.id)} onSave={onSave} />
           ))}
         </div>
       ) : (
@@ -225,7 +250,7 @@ export default function HomePage({ savedSongs, isSaved, onSave, onNavigate, onOp
         <p className="mt-1 text-[15px] text-muted">How are you feeling right now?</p>
       </div>
 
-      <MoodRating />
+      <MoodRating onNavigate={onNavigate} />
 
       <Section title="Playlist for your mood" aside={state?.label}>
         <PlaylistPick state={state} savedSongs={savedSongs} onOpen={setOpenPlaylistId} />

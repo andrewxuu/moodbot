@@ -34,7 +34,7 @@ function PanelBody({ songs, onSeeAll, action }) {
         {shown.length ? (
           <div className="flex flex-col gap-2">
             {shown.map((song) => (
-              <SongRow key={song.id} song={song} slot="panel" showHeart={false} />
+              <SongRow key={song.id} song={song} showHeart={false} />
             ))}
           </div>
         ) : (
@@ -54,7 +54,7 @@ function PanelBody({ songs, onSeeAll, action }) {
 }
 
 export default function SavedPanel({ songs, onSeeAll, drawerOpen = false, onCloseDrawer }) {
-  const { open } = usePlayer()
+  const { play } = usePlayer()
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSED_KEY) === 'true')
 
   useEffect(() => {
@@ -96,15 +96,8 @@ export default function SavedPanel({ songs, onSeeAll, drawerOpen = false, onClos
           className="hidden h-full w-16 shrink-0 flex-col items-center gap-3 overflow-y-auto border-l border-line bg-surface py-8 xl:flex"
         >
           <IconButton icon={PanelRightOpen} label="Show saved songs" size={40} onClick={() => setCollapsed(false)} />
-          {songs.slice(0, LIMIT).map((song) => (
-            <AlbumArt
-              key={song.id}
-              song={song}
-              onPlay={() => {
-                open(`panel:${song.id}`)
-                setCollapsed(false)
-              }}
-            />
+          {songs.slice(0, LIMIT).map((song, i) => (
+            <AlbumArt key={song.id} song={song} onPlay={() => play(songs.slice(0, LIMIT), i)} />
           ))}
         </aside>
         {drawer}

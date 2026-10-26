@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Heart, ListMusic, ListPlus, RefreshCw, Send } from 'lucide-react'
 import ChatDayPicker from '../components/chat/ChatDayPicker'
-import ChatMessage from '../components/chat/ChatMessage'
+import ChatMessage, { TypingDots } from '../components/chat/ChatMessage'
 import PlaylistCard from '../components/chat/PlaylistCard'
 import IconButton from '../components/ui/IconButton'
 import SegmentedSwitch from '../components/ui/SegmentedSwitch'
@@ -21,6 +21,8 @@ import StressFace from '../components/ui/StressFace'
 import { ratingMood, stressLabel, stressValue, useRatings } from '../ratings'
 
 const SAMPLE_REASON = 'Sample picks. Connect Spotify to get picks from your own listening.'
+const wait = () => new Promise((resolve) => setTimeout(resolve, 1200 + Math.random() * 800))
+
 const greeting = { id: 0, from: 'bot', text: greetingText }
 const SPOTIFY_REASON = 'Picked from your recent Spotify listening.'
 const wantsPlaylist = (text) => /\b(make|create|build|start|put together)\b.*\bplaylist\b/i.test(text)
@@ -45,6 +47,7 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onOpenPlaylist, 
   const [mode, setMode] = useState(MODES.match)
   const [viewDay, setViewDay] = useState(todayKey)
   const [building, setBuilding] = useState(false)
+  const [thinking, setThinking] = useState(false)
   const [savedOpen, setSavedOpen] = useState(false)
   const nextId = useRef(null)
   const shown = useRef({})
@@ -61,16 +64,20 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onOpenPlaylist, 
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
-  }, [messages, viewDay])
+  }, [messages, viewDay, thinking])
 
   const respond = async (mood, exclude = [], before = []) => {
     const id = nextId.current++
     if (noMusic && !isSample) {
       const text = 'Connect Spotify in settings so I can find songs for you.'
+      setThinking(true)
+      await wait()
+      setThinking(false)
       return setMessages((m) => [...m, ...before, { id, from: 'bot', text }])
     }
     setMessages((m) => [...m, ...before, { id, from: 'bot', pending: true }])
 
+    const minimum = wait()
     const key = moodKey(mood)
     const alreadyShown = [...(shown.current[key]?.values() ?? [])]
     const feedback = forMood(mood)
@@ -89,6 +96,7 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onOpenPlaylist, 
           feedback,
         })
 
+    await minimum
     shown.current[key] ??= new Map()
     picks.songs.forEach((s) => shown.current[key].set(s.id, s))
 
@@ -109,7 +117,12 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onOpenPlaylist, 
     setMessages((m) => m.map((x) => (x.id === msg.id ? { ...x, stressNote: { ...x.stressNote, undone: true } } : x)))
   }
 
-  const botSay = (text) => setMessages((m) => [...m, { id: nextId.current++, from: 'bot', text }])
+  const botSay = async (text) => {
+    setThinking(true)
+    await wait()
+    setThinking(false)
+    setMessages((m) => [...m, { id: nextId.current++, from: 'bot', text }])
+  }
 
   const makePlaylist = async (mood) => {
     if (status !== 'connected') return botSay('Connect Spotify first, then I can make playlists for you.')
@@ -138,7 +151,11 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onOpenPlaylist, 
     if (status !== 'connected' || !profile?.id) return botSay('Connect Spotify first, then I can look through your playlists.')
     const id = nextId.current++
     setMessages((m) => [...m, { id, from: 'bot', pending: true }])
-    const finish = (msg) => setMessages((m) => m.map((x) => (x.id === id ? { id, from: 'bot', ...msg } : x)))
+    const minimum = wait()
+    const finish = async (msg) => {
+      await minimum
+      setMessages((m) => m.map((x) => (x.id === id ? { id, from: 'bot', ...msg } : x)))
+    }
     try {
       const profiles = await profilePlaylists(playlists, profile.id)
       const fits = rankProfiles(profiles, targetFor(mood, mode === MODES.lift, stateIf(mood)))
@@ -174,7 +191,8 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onOpenPlaylist, 
       return wantsMake ? makePlaylist(mood) : recommendPlaylists(mood)
     }
 
-    const llm = await askMuse([...messages, userMsg])
+    setThinking(true)
+    const llm = await askMuse([...messages, userMsg]).finally(() => setThinking(false))
     if (!llm) return respond(detectMood(clean))
 
     const replyMsg = { id: nextId.current++, from: 'bot', text: llm.reply }
@@ -246,7 +264,7 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onOpenPlaylist, 
             if (msg.pending) {
               return (
                 <ChatMessage key={msg.id}>
-                  <p role="status" className="text-muted">Finding songs…</p>
+                  <TypingDots label="Finding songs" />
                 </ChatMessage>
               )
             }
@@ -285,7 +303,7 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onOpenPlaylist, 
                   <SongRow
                     key={song.id}
                     song={song}
-                    slot={`chat-${viewDay}-${msg.id}`}
+                    queue={msg.songs}
                     saved={isSaved(song.id)}
                     onSave={(s) => saveFromChat(msg, s)}
                     rating={ratingOf(msg.mood, song.id)}
@@ -331,6 +349,11 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onOpenPlaylist, 
               </ChatMessage>
             )
           })}
+          {thinking && isToday && (
+            <ChatMessage>
+              <TypingDots />
+            </ChatMessage>
+          )}
           <div ref={endRef} />
         </div>
 
