@@ -15,6 +15,8 @@ const FAR = 0.5
 const AVOID_SHARE = 0.25
 const LIKE_BONUS = 0.04
 const GENRE_SONGS = 60
+const PROFILE_KEY = 'moodbot:playlist-profiles'
+const PROFILE_MS = 6 * 60 * 60 * 1000
 const MIX_GENRES = 2
 const MIN_COHESIVE = 8
 const PEAK_AT = 0.65
@@ -31,9 +33,28 @@ const targetFrom = (mood) => (typeof mood === 'string' ? targetOf(mood) : mood)
 export const matchPercent = (d) => Math.max(0, Math.round((1 - d / FAR) * 100))
 export const isGoodMatch = (d) => d <= FILTERS.maxMoodDistance
 
-async function songsOf(id) {
-  if (!playlistCache.has(id)) playlistCache.set(id, await getPlaylistSongs(id))
-  return playlistCache.get(id)
+const sampleCache = new Map()
+
+async function sampleOf(id) {
+  if (playlistCache.has(id)) return playlistCache.get(id)
+  if (!sampleCache.has(id)) sampleCache.set(id, await getPlaylistSongs(id, MAX_SONGS))
+  return sampleCache.get(id)
+}
+
+function readProfiles() {
+  try {
+    return JSON.parse(localStorage.getItem(PROFILE_KEY)) ?? {}
+  } catch {
+    return {}
+  }
+}
+
+function writeProfiles(profiles) {
+  try {
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(profiles))
+  } catch {
+    return
+  }
 }
 
 async function genreShares(songs, prefs) {
@@ -46,14 +67,25 @@ async function genreShares(songs, prefs) {
 export async function profilePlaylists(playlists, ownerId) {
   const prefs = loadGenrePrefs()
   const owned = playlists.filter((p) => p.ownerId === ownerId && p.count !== 0).slice(0, MAX_PLAYLISTS)
+  const saved = readProfiles()
+  const next = {}
   const results = await Promise.allSettled(
     owned.map(async (playlist) => {
-      const songs = (await songsOf(playlist.id)).slice(0, MAX_SONGS)
+      const hit = saved[playlist.id]
+      if (hit && hit.count === playlist.count && Date.now() - hit.at < PROFILE_MS) {
+        next[playlist.id] = hit
+        return hit.value && { playlist, ...hit.value }
+      }
+      const songs = (await sampleOf(playlist.id)).slice(0, MAX_SONGS)
       const features = await getAudioFeatures(songs.map((s) => s.id))
       const found = songs.map((s) => features[s.id]).filter(Boolean)
-      return found.length >= MIN_SONGS ? { playlist, profile: averageOf(found), songs: songs.slice(0, GENRE_SONGS) } : null
+      const value = found.length >= MIN_SONGS ? { profile: averageOf(found), songs: songs.slice(0, GENRE_SONGS) } : null
+      if (Object.keys(features).length) next[playlist.id] = { count: playlist.count, at: Date.now(), value }
+      return value && { playlist, ...value }
     })
   )
+  for (const p of owned) if (!next[p.id] && saved[p.id]) next[p.id] = saved[p.id]
+  writeProfiles(next)
   const profiled = results.flatMap((r) => (r.status === 'fulfilled' && r.value ? [r.value] : []))
   const out = []
   for (const { songs, ...rest } of profiled) out.push({ ...rest, ...(await genreShares(songs, prefs)) })
