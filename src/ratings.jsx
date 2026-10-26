@@ -1,19 +1,34 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import { setRealRatings } from './data/sampleMoods'
+import { readKey, writeKey } from './lib/storageKeys'
 
 const STORAGE_KEY = 'moodbot:ratings'
+const SCALE_KEY = 'moodbot:ratings-scale'
+const MOODS = ['great', 'good', 'okay', 'low', 'awful']
+const LABELS = ['Calm', 'Relaxed', 'Meh', 'Stressed', 'Very stressed']
+const level = (rating) => Math.min(4, Math.max(0, Math.round(rating) - 1))
 const RatingsContext = createContext(null)
 
-export const ratingMood = (rating) => ['great', 'good', 'okay', 'low', 'awful'][Math.min(4, Math.floor((rating - 1) / 2))]
-export const stressLabel = (rating) =>
-  ['Calm', 'Relaxed', 'Some stress', 'Stressed', 'Very stressed'][Math.min(4, Math.floor((rating - 1) / 2))]
+export const ratingMood = (rating) => MOODS[level(rating)]
+export const stressLabel = (rating) => LABELS[level(rating)]
+export const stressValue = (rating) => 1 + level(rating) * 2.25
 
 const load = () => {
+  let saved
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) ?? []
+    saved = JSON.parse(localStorage.getItem(STORAGE_KEY)) ?? []
   } catch {
     return []
   }
+  if (readKey(SCALE_KEY) === '5') return saved
+  const converted = saved.map((r) => (Number.isFinite(r.rating) ? { ...r, rating: Math.ceil(r.rating / 2) } : r))
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(converted))
+  } catch {
+    return converted
+  }
+  writeKey(SCALE_KEY, '5')
+  return converted
 }
 
 export function RatingsProvider({ children }) {
@@ -28,8 +43,8 @@ export function RatingsProvider({ children }) {
     }
   }, [ratings])
 
-  const addRating = useCallback((rating) => {
-    const entry = { id: crypto.randomUUID(), rating, note: '', at: new Date().toISOString() }
+  const addRating = useCallback((rating, extra = {}) => {
+    const entry = { id: crypto.randomUUID(), rating, note: '', at: new Date().toISOString(), ...extra }
     setRatings((prev) => [entry, ...prev])
     return entry.id
   }, [])
@@ -38,7 +53,11 @@ export function RatingsProvider({ children }) {
     setRatings((prev) => prev.map((r) => (r.id === id ? { ...r, ...changes } : r)))
   }, [])
 
-  return <RatingsContext.Provider value={{ ratings, addRating, updateRating }}>{children}</RatingsContext.Provider>
+  const removeRating = useCallback((id) => {
+    setRatings((prev) => prev.filter((r) => r.id !== id))
+  }, [])
+
+  return <RatingsContext.Provider value={{ ratings, addRating, updateRating, removeRating }}>{children}</RatingsContext.Provider>
 }
 
 export function useRatings() {

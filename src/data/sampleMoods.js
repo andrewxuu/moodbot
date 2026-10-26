@@ -71,8 +71,6 @@ export function setRealRatings(ratings) {
   realByDay = map
 }
 
-const bandMood = (rating) => scoreMood[Math.min(4, Math.floor((rating - 1) / 2)) + 1]
-
 function realCheckIn(day, logged) {
   const avg = logged.reduce((sum, r) => sum + r.rating, 0) / logged.length
   const rating = Math.round(avg * 10) / 10
@@ -81,14 +79,14 @@ function realCheckIn(day, logged) {
   return {
     id: `real-${dayKey(day)}`,
     date: day,
-    mood: bandMood(Math.round(avg)),
-    score: Math.max(1, avg / 2),
+    mood: scoreMood[Math.min(5, Math.max(1, Math.round(avg)))],
+    score: Math.max(1, avg),
     rating,
     count,
     real: true,
     note: latestNote ?? '',
     songs: 0,
-    meta: `${rating}/10 · ${count} check-in${count === 1 ? '' : 's'}`,
+    meta: `${rating}/5 · ${count} check-in${count === 1 ? '' : 's'}`,
   }
 }
 
@@ -101,7 +99,7 @@ export function checkInFor(date, today = new Date()) {
   if (day >= now || !sampleDataOn()) return null
   const sample = sampleCheckIn(day, today)
   if (!sample) return null
-  return { ...sample, rating: sample.score * 2, count: 1, real: false, meta: `${sample.songs} songs picked` }
+  return { ...sample, rating: sample.score, count: 1, real: false, meta: `${sample.songs} songs picked` }
 }
 
 export function checkInsBetween(start, end, today = new Date()) {

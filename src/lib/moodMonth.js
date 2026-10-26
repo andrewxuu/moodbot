@@ -7,8 +7,15 @@ export const moodBg = {
   low: 'bg-mood-low',
   awful: 'bg-mood-awful',
 }
+export const moodRing = {
+  great: 'ring-mood-great',
+  good: 'ring-mood-good',
+  okay: 'ring-mood-okay',
+  low: 'ring-mood-low',
+  awful: 'ring-mood-awful',
+}
 export const scoreMood = ['', 'great', 'good', 'okay', 'low', 'awful']
-export const stressNames = { great: 'Calm', good: 'Relaxed', okay: 'Some stress', low: 'Stressed', awful: 'Very stressed' }
+export const stressNames = { great: 'Calm', good: 'Relaxed', okay: 'Meh', low: 'Stressed', awful: 'Very stressed' }
 export const moodLabel = (m) => stressNames[m] ?? m
 
 export const startOfToday = () => {

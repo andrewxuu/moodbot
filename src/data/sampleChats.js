@@ -9,7 +9,7 @@ export const greetingText = "Hi! How are you feeling? Tell me and I'll find musi
 const prompts = {
   Calm: ['Long day, I need to wind down', 'Want something calm before bed', 'Just want to chill for a bit'],
   Relaxed: ['Feeling good today, keep it going', 'Pretty relaxed, give me something easy', 'Just got good news'],
-  'Some stress': ['Studying for midterms, need focus music', 'Got a lot of work to get through', 'Help me focus on this essay'],
+  Meh: ['Studying for midterms, need focus music', 'Got a lot of work to get through', 'Help me focus on this essay'],
   Stressed: ['Stressed about exams, need to let it out', 'Deadline tomorrow and I am wound up', 'Need something intense to get through today'],
   'Very stressed': ['Feeling overwhelmed today', 'Rough day, I need something comforting', 'Missing home a bit'],
 }
