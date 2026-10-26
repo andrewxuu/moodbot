@@ -6,7 +6,7 @@ import { ratingMood, stressLabel, useRatings } from '../ratings'
 import SongRow from '../components/songs/SongRow'
 import PlaylistDetail from './PlaylistDetail'
 import PlaylistPick from '../components/playlists/PlaylistPick'
-import { moodForStress } from '../lib/playlistMood'
+import { stateFor } from '../lib/moodTags'
 
 function greetingFor(hour) {
   if (hour < 5) return 'Up late'
@@ -215,7 +215,8 @@ export default function HomePage({ savedSongs, isSaved, onSave, onNavigate, onOp
   const firstName = profile?.name?.split(' ')[0]
   const greeting = greetingFor(new Date().getHours())
   const todays = ratings.find((r) => isToday(r.at))
-  const mood = todays ? moodForStress(todays.rating) : null
+  const recent = ratings.filter((r) => isToday(r.at)).map((r) => r.rating).reverse()
+  const state = todays ? stateFor({ stress: todays.rating, recent }) : null
 
   if (openPlaylist) {
     return <PlaylistDetail playlist={openPlaylist} onBack={() => setOpenPlaylistId(null)} isSaved={isSaved} onSave={onSave} />
@@ -230,8 +231,8 @@ export default function HomePage({ savedSongs, isSaved, onSave, onNavigate, onOp
 
       <MoodRating />
 
-      <Section title="Playlist for your mood" aside={mood && `For ${mood.toLowerCase()}`}>
-        <PlaylistPick mood={mood} savedSongs={savedSongs} onOpen={setOpenPlaylistId} />
+      <Section title="Playlist for your mood" aside={state?.label}>
+        <PlaylistPick state={state} savedSongs={savedSongs} onOpen={setOpenPlaylistId} />
       </Section>
 
       <RecentlySaved savedSongs={savedSongs} isSaved={isSaved} onSave={onSave} onOpenLiked={onOpenLiked} />
