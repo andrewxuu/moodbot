@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
-import { ArrowLeft, Clock, ExternalLink, Heart, Plus, Search } from 'lucide-react'
+import { ArrowLeft, Clock, ExternalLink, Heart, Play, Plus, Search, Shuffle } from 'lucide-react'
 import PlaylistSongRow, { PLAYLIST_COLUMNS } from '../components/songs/PlaylistSongRow'
 import SegmentedSwitch from '../components/ui/SegmentedSwitch'
 import { getPlaylistSongs, NotOwnedError, replaceTracks } from '../spotify/api'
 import { useSpotify } from '../spotify/useSpotify'
+import { usePlayer } from '../spotify/usePlayer'
 import { matchesSearch } from '../lib/search'
 import { playlistCache } from '../lib/playlistCache'
 import { MODES, averageOf, distance, stateFor, targetFor } from '../lib/moodTags'
@@ -22,6 +23,15 @@ const EXTEND_BY = 10
 const EXISTING_FEATURES = 300
 const SYNC_TEXT = { saving: 'Updating Spotify…', saved: 'Spotify playlist updated', error: 'Couldn’t update Spotify. Try again.' }
 
+function shuffled(songs) {
+  const copy = [...songs]
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[copy[i], copy[j]] = [copy[j], copy[i]]
+  }
+  return copy
+}
+
 function sortByFit(songs, features, target) {
   const gap = (song) => {
     const d = distance(features[song.id], target)
@@ -39,6 +49,7 @@ const totalLength = (songs) => {
 export default function PlaylistDetail({ playlist, songs: fixedSongs, onBack, isSaved, onSave }) {
   const { profile, listening, removeSong, addSongs } = useSpotify()
   const { ratings } = useRatings()
+  const { play } = usePlayer()
   const notMine = profile?.id && playlist.ownerId && playlist.ownerId !== profile.id && !playlist.collaborative
   const fixed = Boolean(fixedSongs)
   const [fetched, setState] = useState(() =>
@@ -205,7 +216,7 @@ export default function PlaylistDetail({ playlist, songs: fixedSongs, onBack, is
           <span />
           <span />
         </div>
-        {shown.map((song) => (
+        {shown.map((song, i) => (
           <PlaylistSongRow
             key={`${song.id}-${state.songs.indexOf(song)}`}
             song={song}
@@ -213,6 +224,7 @@ export default function PlaylistDetail({ playlist, songs: fixedSongs, onBack, is
             saved={isSaved(song.id)}
             onSave={onSave}
             onRemove={canRemove ? setRemoving : undefined}
+            onPlay={() => play(shown, i)}
           />
         ))}
       </div>
@@ -239,6 +251,26 @@ export default function PlaylistDetail({ playlist, songs: fixedSongs, onBack, is
         <div className="min-w-0">
           <h1 className="truncate font-serif text-[30px] font-semibold">{playlist.name}</h1>
           {summary && <p className="mt-1 text-[15px] text-muted">{summary}</p>}
+          {ready && state.songs.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => play(ordered)}
+                className="inline-flex h-10 items-center gap-1.5 rounded-full bg-teal px-5 text-sm font-semibold text-white"
+              >
+                <Play size={16} fill="currentColor" aria-hidden="true" />
+                Play
+              </button>
+              <button
+                type="button"
+                onClick={() => play(shuffled(ordered))}
+                className="inline-flex h-10 items-center gap-1.5 rounded-full border border-teal px-5 text-sm font-semibold text-teal"
+              >
+                <Shuffle size={16} aria-hidden="true" />
+                Shuffle
+              </button>
+            </div>
+          )}
           {playlist.url && (
             <a href={playlist.url} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1.5 text-sm text-teal underline">
               <ExternalLink size={14} />

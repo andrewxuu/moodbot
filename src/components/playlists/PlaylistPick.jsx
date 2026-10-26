@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Play } from 'lucide-react'
 import SpotifyError from './SpotifyError'
 import { useSpotify } from '../../spotify/useSpotify'
+import { usePlayer } from '../../spotify/usePlayer'
+import { getPlaylistSongs } from '../../spotify/api'
+import { playlistCache } from '../../lib/playlistCache'
+import IconButton from '../ui/IconButton'
 import { mixName } from '../../lib/moodTags'
 import { buildMoodSongs, isGoodMatch, matchPercent, profilePlaylists, rankProfiles } from '../../lib/playlistMood'
 
@@ -72,18 +77,40 @@ export default function PlaylistPick({ state, savedSongs, onOpen }) {
 
 function MatchCard({ best, onOpen }) {
   const { playlist } = best
+  const { play, notify } = usePlayer()
+  const [loading, setLoading] = useState(false)
+
+  const start = async () => {
+    setLoading(true)
+    try {
+      let songs = playlistCache.get(playlist.id)
+      if (!songs) {
+        songs = await getPlaylistSongs(playlist.id)
+        playlistCache.set(playlist.id, songs)
+      }
+      await play(songs)
+    } catch {
+      notify('error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
-    <button type="button" onClick={() => onOpen(playlist.id)} className="flex items-center gap-4 text-left">
-      {playlist.image ? (
-        <img src={playlist.image} alt="" className="size-16 shrink-0 rounded-[12px] object-cover" />
-      ) : (
-        <div className="size-16 shrink-0 rounded-[12px] bg-art" />
-      )}
-      <div className="min-w-0">
-        <p className="truncate text-[15px] font-semibold">
-          {playlist.name} <span className="ml-1.5 text-teal">{matchPercent(best.distance)}% match</span>
-        </p>
-      </div>
-    </button>
+    <div className="flex items-center gap-4">
+      <button type="button" onClick={() => onOpen(playlist.id)} className="flex min-w-0 items-center gap-4 text-left">
+        {playlist.image ? (
+          <img src={playlist.image} alt="" className="size-16 shrink-0 rounded-[12px] object-cover" />
+        ) : (
+          <div className="size-16 shrink-0 rounded-[12px] bg-art" />
+        )}
+        <div className="min-w-0">
+          <p className="truncate text-[15px] font-semibold">
+            {playlist.name} <span className="ml-1.5 text-teal">{matchPercent(best.distance)}% match</span>
+          </p>
+        </div>
+      </button>
+      <IconButton icon={Play} label={loading ? 'Loading playlist' : `Play ${playlist.name}`} primary onClick={loading ? undefined : start} />
+    </div>
   )
 }

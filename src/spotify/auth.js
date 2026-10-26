@@ -9,6 +9,11 @@ const SCOPES = [
   'playlist-modify-private',
   'user-top-read',
   'user-read-recently-played',
+  'streaming',
+  'user-read-email',
+  'user-read-private',
+  'user-modify-playback-state',
+  'user-read-playback-state',
 ].join(' ')
 
 const TOKEN_KEY = 'moodbot:spotify-token'

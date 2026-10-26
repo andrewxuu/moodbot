@@ -120,6 +120,13 @@ async function libraryWrite(id, method) {
   }
 }
 
+export async function startPlayback(deviceId, uris, position = 0) {
+  await request(`/me/player/play?device_id=${encodeURIComponent(deviceId)}`, {
+    method: 'PUT',
+    body: { uris, offset: { position } },
+  })
+}
+
 export const likeTrack = (id) => libraryWrite(id, 'PUT')
 export const unlikeTrack = (id) => libraryWrite(id, 'DELETE')
 
