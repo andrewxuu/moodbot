@@ -1,3 +1,4 @@
+import StressFace from '../ui/StressFace'
 import { dayTip, useChartTooltip, weekTip } from '../ui/ChartTooltip'
 import { buildWeeks, moodBg, moodLabel as label, scoreMood, startOfToday, weekAverage, weekIsUpcoming } from '../../lib/moodMonth'
 
@@ -63,7 +64,7 @@ export default function MoodCalendar({ monthStart }) {
           >
             {avg ? (
               <>
-                <span className={`size-2.5 rounded-full ${moodBg[scoreMood[Math.round(avg)]]}`} />
+                <StressFace mood={scoreMood[Math.round(avg)]} size={18} />
                 <span className="tabular-nums text-ink">{avg.toFixed(1)}</span>
               </>
             ) : (

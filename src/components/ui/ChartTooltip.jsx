@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
-import { moodBg, moodLabel } from '../../lib/moodMonth'
+import { moodLabel } from '../../lib/moodMonth'
+import StressFace from './StressFace'
 
 const longDate = (d) => d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
 const shortDate = (d) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
@@ -58,7 +59,7 @@ export function useChartTooltip() {
       <p className="font-semibold">{tip.content.title}</p>
       {tip.content.mood && (
         <p className="mt-1 flex items-center gap-1.5">
-          <span className={`size-2.5 shrink-0 rounded-full ring-1 ring-surface/60 ${moodBg[tip.content.mood]}`} />
+          <StressFace mood={tip.content.mood} size={18} />
           {tip.content.moodText}
         </p>
       )}

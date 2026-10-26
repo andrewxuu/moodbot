@@ -1,8 +1,20 @@
 import { useEffect, useRef, useState } from 'react'
-import { Check, ChevronDown } from 'lucide-react'
+import { ChevronDown } from 'lucide-react'
 import { dayName } from '../../data/sampleChats'
+import { moodLabel } from '../../lib/moodMonth'
+import StressFace from '../ui/StressFace'
 
-export default function ChatDayPicker({ days, value, onChange }) {
+function StressDot({ mood }) {
+  const label = mood ? `Stress: ${moodLabel(mood)}` : 'No check-in'
+  return (
+    <span title={label} className="inline-flex">
+      <StressFace mood={mood} size={20} />
+      <span className="sr-only">{label}</span>
+    </span>
+  )
+}
+
+export default function ChatDayPicker({ days, value, onChange, stressOf = () => null }) {
   const [open, setOpen] = useState(false)
   const wrap = useRef(null)
   const current = days.find((d) => d.key === value) ?? days[0]
@@ -34,6 +46,8 @@ export default function ChatDayPicker({ days, value, onChange }) {
         className="flex h-9 items-center gap-1.5 rounded-full border border-line bg-surface px-3.5 text-sm text-ink hover:border-teal"
       >
         {dayName(current.date)}
+        <span className="h-4 w-px bg-line" aria-hidden="true" />
+        <StressDot mood={stressOf(current.date)} />
         <ChevronDown size={15} aria-hidden="true" className={`transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
@@ -53,7 +67,7 @@ export default function ChatDayPicker({ days, value, onChange }) {
                 }`}
               >
                 <span className="flex-1">{dayName(d.date)}</span>
-                <Check size={15} aria-hidden="true" className={selected ? 'text-teal' : 'invisible'} />
+                <StressDot mood={stressOf(d.date)} />
               </button>
             )
           })}

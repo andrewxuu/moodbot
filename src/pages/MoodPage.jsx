@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import CheckInList from '../components/mood/CheckInList'
+import StressFace from '../components/ui/StressFace'
 import MoodCalendar from '../components/mood/MoodCalendar'
 import MoodDaily from '../components/mood/MoodDaily'
 import MoodStats from '../components/mood/MoodStats'
@@ -16,13 +17,6 @@ import { chatStats, songStats, useSongGenres } from '../lib/musicStats'
 import { moodLabel as label } from '../lib/moodMonth'
 import { useRatings } from '../ratings'
 
-const moodBg = {
-  great: 'bg-mood-great',
-  good: 'bg-mood-good',
-  okay: 'bg-mood-okay',
-  low: 'bg-mood-low',
-  awful: 'bg-mood-awful',
-}
 const shortDate = (d) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 
 function periodFor(range, offset, today) {
@@ -131,7 +125,7 @@ export default function MoodPage({ savedSongs = [] }) {
           <div className="flex gap-3 text-xs text-muted">
             {moodLevels.map((m) => (
               <span key={m} className="flex items-center gap-1">
-                <span className={`size-2.5 rounded-full ${moodBg[m]}`} />
+                <StressFace mood={m} size={16} />
                 {label(m)}
               </span>
             ))}

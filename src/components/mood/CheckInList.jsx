@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Check, ChevronDown, Funnel } from 'lucide-react'
-import { moodBg, moodLabel } from '../../lib/moodMonth'
+import { moodLabel } from '../../lib/moodMonth'
+import StressFace from '../ui/StressFace'
 import { whenLabel } from '../../data/sampleMoods'
 
 const moods = ['great', 'good', 'okay', 'low', 'awful']
@@ -61,7 +62,7 @@ function MoodFilter({ value, onChange, counts, total }) {
                   selected ? 'bg-teal-soft font-semibold' : 'hover:bg-cream'
                 } ${empty ? 'text-hint' : 'text-ink'}`}
               >
-                {o.id !== 'all' && <span className={`size-2.5 shrink-0 rounded-full ${moodBg[o.id]} ${empty ? 'opacity-40' : ''}`} />}
+                {o.id !== 'all' && <StressFace mood={o.id} size={20} dim={empty} />}
                 <span className="flex-1">{o.label}</span>
                 <span className="tabular-nums text-muted">{o.count}</span>
                 <Check size={15} aria-hidden="true" className={selected ? 'text-teal' : 'invisible'} />
@@ -95,14 +96,14 @@ export default function CheckInList({ title, checkIns, periodKey }) {
 
       {shown.map((c) => (
         <div key={c.id} className="flex h-[60px] items-center gap-3 rounded-[14px] border border-line bg-surface px-3.5">
-          <span className={`size-3.5 shrink-0 rounded-full ${moodBg[c.mood]}`} />
+          <StressFace mood={c.mood} size={26} />
           <div className="min-w-0 flex-1">
             <p className="text-[15px] font-semibold">{moodLabel(c.mood)}</p>
             <p className="mt-0.5 truncate text-[13px] text-muted">{c.note || `${c.count} check-in${c.count === 1 ? '' : 's'}`}</p>
           </div>
           <div className="shrink-0 text-right text-[13px] text-muted">
             <p>{whenLabel(c.date)}</p>
-            <p className="mt-0.5">{c.real ? `${c.rating}/10` : `${c.songs} songs`}</p>
+            <p className="mt-0.5">{c.real ? `${c.rating}/5` : `${c.songs} songs`}</p>
           </div>
         </div>
       ))}
