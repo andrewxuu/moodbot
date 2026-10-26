@@ -90,7 +90,28 @@ function Genres() {
   )
 }
 
-function SpotifyStep({ connected, expired }) {
+function SpotifyStep({ connected, expired, profile }) {
+  if (connected && profile) {
+    return (
+      <div className="flex flex-col items-center gap-3 rounded-[14px] bg-teal-soft p-5 text-center">
+        {profile.image ? (
+          <img src={profile.image} alt="" className="size-20 rounded-full object-cover" />
+        ) : (
+          <div className="flex size-20 items-center justify-center rounded-full bg-teal text-3xl font-semibold text-white">
+            {profile.name[0].toUpperCase()}
+          </div>
+        )}
+        <div className="min-w-0">
+          <p className="truncate text-[18px] font-semibold">{profile.name}</p>
+          <p className="mt-1 flex items-center justify-center gap-1.5 text-[13px] text-teal">
+            <Check size={14} aria-hidden="true" />
+            Connected to Spotify
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col items-center gap-2 rounded-[14px] bg-teal-soft p-5 text-center">
       <p className="text-[18px] font-semibold text-teal">Spotify</p>
@@ -103,7 +124,7 @@ function SpotifyStep({ connected, expired }) {
 
 export default function OnboardingPage() {
   const { user, guest, finishOnboarding } = useAccount()
-  const { status, connect } = useSpotify()
+  const { status, connect, profile } = useSpotify()
   const [withAccount] = useState(() => !(user || guest))
   const ids = withAccount ? ['welcome', 'account', 'spotify', 'genres', 'look', 'tour'] : ['welcome', 'spotify', 'genres', 'look', 'tour']
   const [id, setId] = useState(() => {
@@ -159,7 +180,7 @@ export default function OnboardingPage() {
             <p className="text-[15px] text-muted">{copy[id][1]}</p>
           </div>
           {id === 'welcome' && <Features />}
-          {id === 'spotify' && <SpotifyStep connected={connected} expired={status === 'expired'} />}
+          {id === 'spotify' && <SpotifyStep connected={connected} expired={status === 'expired'} profile={profile} />}
           {id === 'genres' && (
             <>
               <Genres />
