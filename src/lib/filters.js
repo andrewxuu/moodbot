@@ -7,7 +7,7 @@ export const normalize = (text = '') =>
   text
     .toLowerCase()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[̀-ͯ]/g, '')
     .replace(/\s*[([].*?[)\]]/g, '')
     .replace(/\s+-\s+.*$/, '')
     .replace(/[^\p{L}\p{N}]+/gu, ' ')
@@ -16,19 +16,37 @@ export const normalize = (text = '') =>
 export const firstArtist = (artist = '') => artist.split(', ')[0]
 export const songKey = (artist, title) => `${normalize(firstArtist(artist))}|${normalize(title)}`
 
-const scripts = {
-  hangul: /[\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F]/,
-  kana: /[\u3040-\u30FF]/,
-  han: /[\u4E00-\u9FFF]/,
-  cyrillic: /[\u0400-\u04FF]/,
-  arabic: /[\u0600-\u06FF]/,
-  hebrew: /[\u0590-\u05FF]/,
-  thai: /[\u0E00-\u0E7F]/,
-  devanagari: /[\u0900-\u097F]/,
-  greek: /[\u0370-\u03FF]/,
+export function shuffle(list) {
+  const out = [...list]
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[out[i], out[j]] = [out[j], out[i]]
+  }
+  return out
 }
 
-const latinLanguages = {
+export const uniqueBy = (list, key) => [...new Map(list.map((x) => [key(x), x])).values()]
+
+export const joinWords = (words) =>
+  words.length < 2 ? (words[0] ?? '') : `${words.slice(0, -1).join(', ')} and ${words.at(-1)}`
+
+export const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+export const wordPattern = (word) => new RegExp(`(^|[\\s-])${escapeRegExp(word)}($|[\\s-])`)
+
+const SCRIPTS = {
+  hangul: /[가-힯ᄀ-ᇿ㄰-㆏]/,
+  kana: /[぀-ヿ]/,
+  han: /[一-鿿]/,
+  cyrillic: /[Ѐ-ӿ]/,
+  arabic: /[؀-ۿ]/,
+  hebrew: /[֐-׿]/,
+  thai: /[฀-๿]/,
+  devanagari: /[ऀ-ॿ]/,
+  greek: /[Ͱ-Ͽ]/,
+}
+
+const LATIN_LANGUAGES = {
   spanish: {
     chars: /[ñ¿¡áíóú]/,
     words: ['el', 'los', 'las', 'del', 'que', 'mi', 'quiero', 'contigo', 'sin', 'yo', 'eres', 'noche', 'vida', 'baila', 'mía', 'todo', 'corazón', 'amor', 'te', 'y', 'la', 'de'],
@@ -51,47 +69,40 @@ const latinLanguages = {
   },
 }
 
-const englishWords = new Set(['the', 'you', 'me', 'my', 'i', 'love', 'your', 'and', 'in', 'of', 'to', 'it', 'on', 'we', 'is', 'be', 'all', 'for'])
+const ENGLISH_WORDS = new Set(['the', 'you', 'me', 'my', 'i', 'love', 'your', 'and', 'in', 'of', 'to', 'it', 'on', 'we', 'is', 'be', 'all', 'for'])
 
-export function scriptsIn(text) {
-  return Object.keys(scripts).filter((name) => scripts[name].test(text))
-}
+export const scriptsIn = (text) => Object.keys(SCRIPTS).filter((name) => SCRIPTS[name].test(text))
 
 export function latinLanguageOf(title) {
   const lower = title.toLowerCase()
   const words = [...new Set(lower.split(/[^\p{L}']+/u).filter(Boolean))]
-  if (words.some((w) => englishWords.has(w))) return null
+  if (words.some((w) => ENGLISH_WORDS.has(w))) return null
 
   let best = null
   let bestScore = 0
-  for (const [name, { chars, words: markers }] of Object.entries(latinLanguages)) {
+  for (const [name, { chars, words: markers }] of Object.entries(LATIN_LANGUAGES)) {
     const score = (chars.test(lower) ? 2 : 0) + words.filter((w) => markers.includes(w)).length
-    if (score > bestScore) {
-      best = name
-      bestScore = score
-    }
+    if (score > bestScore) [best, bestScore] = [name, score]
   }
   return bestScore >= 2 ? best : null
 }
 
+const keepCommon = (counts, min) => new Set(Object.keys(counts).filter((k) => counts[k] >= min))
+
 export function libraryProfile(songs) {
-  const scriptCounts = {}
-  const languageCounts = {}
+  const scripts = {}
+  const languages = {}
   const artists = new Set()
 
   songs.forEach((s) => {
-    scriptsIn(`${s.title} ${s.artist}`).forEach((sc) => (scriptCounts[sc] = (scriptCounts[sc] ?? 0) + 1))
+    scriptsIn(`${s.title} ${s.artist}`).forEach((sc) => (scripts[sc] = (scripts[sc] ?? 0) + 1))
     const lang = latinLanguageOf(s.title)
-    if (lang) languageCounts[lang] = (languageCounts[lang] ?? 0) + 1
+    if (lang) languages[lang] = (languages[lang] ?? 0) + 1
     s.artist.split(', ').forEach((a) => artists.add(a.toLowerCase()))
   })
 
   const min = Math.max(2, Math.round(songs.length * 0.02))
-  return {
-    scripts: new Set(Object.keys(scriptCounts).filter((k) => scriptCounts[k] >= min)),
-    languages: new Set(Object.keys(languageCounts).filter((k) => languageCounts[k] >= min)),
-    artists,
-  }
+  return { scripts: keepCommon(scripts, min), languages: keepCommon(languages, min), artists }
 }
 
 export function passesLanguage(rec, profile) {

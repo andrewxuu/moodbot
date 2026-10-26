@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Heart, ListPlus, Music, RefreshCw, Send } from 'lucide-react'
+import { Heart, ListMusic, ListPlus, RefreshCw, Send } from 'lucide-react'
 import ChatDayPicker from '../components/chat/ChatDayPicker'
 import ChatMessage from '../components/chat/ChatMessage'
 import PlaylistCard from '../components/chat/PlaylistCard'
@@ -15,24 +15,31 @@ import { moodKey, useFeedback } from '../feedback'
 import { chatDays, greetingText, loadChats, saveChat, todayKey } from '../data/sampleChats'
 import { askMuse } from '../services/chatLLM'
 import { sampleDataOn } from '../lib/devMode'
-import { buildMoodSongs } from '../lib/playlistMood'
+import { buildMoodSongs, isGoodMatch, matchPercent, profilePlaylists, rankProfiles } from '../lib/playlistMood'
+import { MODES, MOOD_NAMES, canonMood, mixName, stateFor, targetFor } from '../lib/moodTags'
+import { useRatings } from '../ratings'
 
-const moods = ['Calm', 'Hype', 'Focus', 'Sad', 'Happy']
 const SAMPLE_REASON = 'Sample picks. Connect Spotify to get picks from your own listening.'
 const greeting = { id: 0, from: 'bot', text: greetingText }
 const SPOTIFY_REASON = 'Picked from your recent Spotify listening.'
 const wantsPlaylist = (text) => /\b(make|create|build|start|put together)\b.*\bplaylist\b/i.test(text)
+const asksForPlaylists = (text) => /\b(recommend|suggest|show|find|pick|which|any)\b.*\bplaylists?\b/i.test(text)
 
 export default function ChatPage({ savedSongs, isSaved, onSave, onOpenPlaylist, onOpenLiked }) {
-  const { status, listening, liked, createPlaylist, addSongs } = useSpotify()
+  const { status, profile, playlists, listening, liked, createPlaylist, addSongs } = useSpotify()
   const { forMood, ratingOf, rate } = useFeedback()
+  const { ratings } = useRatings()
+  const todayRatings = ratings.filter((r) => new Date(r.at).toDateString() === new Date().toDateString())
+  const state = todayRatings.length ? stateFor({ stress: todayRatings[0].rating, recent: todayRatings.map((r) => r.rating).reverse() }) : null
+  const stateIf = (mood) => (state?.mood === mood ? state : undefined)
+  const chips = state ? [state.mood, ...MOOD_NAMES.filter((m) => m !== state.mood)] : MOOD_NAMES
   const noMusic = listening.length === 0
   const isSample = noMusic && sampleDataOn()
   const pool = isSample ? sampleSongs : listening
 
   const [messages, setMessages] = useState(() => loadChats()[todayKey()] ?? [greeting])
   const [draft, setDraft] = useState('')
-  const [mode, setMode] = useState('Match my mood')
+  const [mode, setMode] = useState(MODES.match)
   const [viewDay, setViewDay] = useState(todayKey)
   const [building, setBuilding] = useState(false)
   const [savedOpen, setSavedOpen] = useState(false)
@@ -73,6 +80,7 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onOpenPlaylist, 
           pool: listening,
           mood,
           mode,
+          state: stateIf(mood),
           exclude: skip,
           alreadyShown,
           feedback,
@@ -94,18 +102,44 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onOpenPlaylist, 
     setMessages((m) => [...m, { id, from: 'bot', pending: true }])
     const finish = (msg) => setMessages((m) => m.map((x) => (x.id === id ? { id, from: 'bot', ...msg } : x)))
     try {
-      const songs = await buildMoodSongs({ mood, saved: savedSongs, listening })
-      if (!songs.length) throw new Error(`I couldn’t find ${mood.toLowerCase()} songs yet. Try again in a bit.`)
-      const playlist = await createPlaylist(`${mood} mix`)
+      const songs = await buildMoodSongs({ mood, state: stateIf(mood), mode, saved: savedSongs, listening })
+      if (!songs.length) throw new Error('I couldn’t find enough songs yet. Try again in a bit.')
+      const playlist = await createPlaylist(mixName(mood))
       await addSongs(playlist.id, songs)
       finish({
-        text: `Done. I made you a ${mood.toLowerCase()} mix.`,
+        text: `Done. Your ${mixName(mood)} is ready.`,
         playlist: { id: playlist.id, name: playlist.name, image: playlist.image ?? null, count: songs.length },
       })
     } catch (err) {
       finish({ text: err.message || 'I couldn’t make that playlist. Try again.' })
     } finally {
       setBuilding(false)
+    }
+  }
+
+  const recommendPlaylists = async (mood) => {
+    if (status !== 'connected' || !profile?.id) return botSay('Connect Spotify first, then I can look through your playlists.')
+    const id = nextId.current++
+    setMessages((m) => [...m, { id, from: 'bot', pending: true }])
+    const finish = (msg) => setMessages((m) => m.map((x) => (x.id === id ? { id, from: 'bot', ...msg } : x)))
+    try {
+      const profiles = await profilePlaylists(playlists, profile.id)
+      const fits = rankProfiles(profiles, targetFor(mood, mode === MODES.lift, stateIf(mood)))
+        .filter((p) => isGoodMatch(p.distance))
+        .slice(0, 3)
+      if (!fits.length) return finish({ text: 'None of your playlists fit that well. Say “make a playlist” and I’ll build one.' })
+      finish({
+        text: fits.length === 1 ? 'This one of yours fits best:' : 'These playlists of yours fit best:',
+        playlists: fits.map(({ playlist, distance }) => ({
+          id: playlist.id,
+          name: playlist.name,
+          image: playlist.image ?? null,
+          count: playlist.count,
+          match: matchPercent(distance),
+        })),
+      })
+    } catch {
+      finish({ text: 'I couldn’t look through your playlists. Try again.' })
     }
   }
 
@@ -116,10 +150,11 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onOpenPlaylist, 
     const userMsg = { id: nextId.current++, from: 'user', text: clean }
     setMessages((m) => [...m, userMsg])
 
-    if (wantsPlaylist(clean)) {
-      const mood = detectMood(clean) || [...messages].reverse().find((m) => m.mood)?.mood
+    const wantsMake = wantsPlaylist(clean)
+    if (wantsMake || asksForPlaylists(clean)) {
+      const mood = detectMood(clean) || [...messages].reverse().find((m) => m.mood)?.mood || state?.mood
       if (!mood) return botSay('Happy to. How are you feeling? Tell me or pick a mood below, then ask again.')
-      return makePlaylist(mood)
+      return wantsMake ? makePlaylist(mood) : recommendPlaylists(mood)
     }
 
     const llm = await askMuse([...messages, userMsg])
@@ -140,9 +175,9 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onOpenPlaylist, 
   const downNote = (msg) => `Won’t be picked again${msg.mood ? ` for ${msg.mood.toLowerCase()}` : ''}`
 
   const intro = (msg) => {
-    const kind = msg.mood ? `${msg.mood.toLowerCase()} ` : ''
+    const kind = canonMood(msg.mood) ? ` for feeling ${canonMood(msg.mood).toLowerCase()}` : ''
     const basis = isSample ? 'your mood' : msg.mood ? 'your mood and your Spotify listening' : 'your Spotify listening'
-    return `Here are some ${kind}picks based on ${basis}:`
+    return `Here are some picks${kind} based on ${basis}:`
   }
 
   return (
@@ -174,6 +209,16 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onOpenPlaylist, 
               return (
                 <ChatMessage key={msg.id}>
                   <p role="status" className="text-muted">Finding songs…</p>
+                </ChatMessage>
+              )
+            }
+            if (msg.playlists) {
+              return (
+                <ChatMessage key={msg.id} width={480} fill>
+                  <p>{msg.text}</p>
+                  {msg.playlists.map((p) => (
+                    <PlaylistCard key={p.id} playlist={p} onOpen={onOpenPlaylist} />
+                  ))}
                 </ChatMessage>
               )
             }
@@ -211,10 +256,6 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onOpenPlaylist, 
                   />
                 ))}
                 <div className="mt-1 flex flex-col gap-2.5">
-                  <p className="flex items-center gap-1.5 text-[13px] text-muted">
-                    <Music size={14} className="shrink-0" />
-                    {msg.reason}
-                  </p>
                   {isToday && (
                     <div className="flex flex-wrap gap-2">
                       <button
@@ -225,6 +266,16 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onOpenPlaylist, 
                         <RefreshCw size={16} />
                         More like this
                       </button>
+                      {msg.mood && (
+                        <button
+                          type="button"
+                          onClick={() => recommendPlaylists(msg.mood)}
+                          className="flex h-10 items-center gap-1.5 rounded-full border border-teal bg-surface px-3.5 text-sm font-semibold text-teal hover:bg-teal-soft"
+                        >
+                          <ListMusic size={16} />
+                          Find a playlist
+                        </button>
+                      )}
                       {msg.mood && (
                         <button
                           type="button"
@@ -255,13 +306,13 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onOpenPlaylist, 
         ) : (
           <div className="flex w-full max-w-[700px] flex-col gap-3">
             <div className="flex flex-wrap gap-2">
-              {moods.map((m) => (
+              {chips.map((m) => (
                 <Chip key={m} onClick={() => send(m)}>
                   {m}
                 </Chip>
               ))}
             </div>
-            <SegmentedSwitch options={['Match my mood', 'Lift my mood']} value={mode} onChange={setMode} />
+            <SegmentedSwitch options={[MODES.match, MODES.lift]} value={mode} onChange={setMode} />
             <div className="flex items-center gap-2.5">
               <input
                 value={draft}

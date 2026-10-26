@@ -23,11 +23,15 @@ async function request(pathOrUrl, { method = 'GET', body } = {}) {
   }
   if (res.status === 429) {
     const data = await res.json().catch(() => ({}))
-    throw new Error(
+    const busy = new Error(
       data.error?.reason === 'QUOTA_EXCEEDED'
         ? 'Spotify’s usage limit for this app was reached. Try again later.'
         : 'Spotify is busy. Wait a moment, then try again.'
     )
+    busy.status = 429
+    busy.quota = data.error?.reason === 'QUOTA_EXCEEDED'
+    busy.retryAfter = Number(res.headers.get('Retry-After')) || 2
+    throw busy
   }
   if (!res.ok) {
     const error = new Error(`Spotify request failed (${res.status}). Try again.`)
@@ -102,8 +106,8 @@ async function write(path, body, method = 'POST') {
   }
 }
 
-export async function createPlaylist(name) {
-  const created = await write('/me/playlists', { name, public: false })
+export async function createPlaylist(name, description = 'Created with Muse') {
+  const created = await write('/me/playlists', { name, description, public: false })
   return { ...toPlaylist(created), count: 0 }
 }
 
@@ -135,6 +139,11 @@ export const restorePlaylist = (id) => playlistLibraryWrite(id, 'PUT')
 
 export async function addTracks(playlistId, uris) {
   await write(`/playlists/${playlistId}/items`, { uris })
+}
+
+export async function replaceTracks(playlistId, uris) {
+  await write(`/playlists/${playlistId}/items`, { uris: uris.slice(0, 100) }, 'PUT')
+  for (let i = 100; i < uris.length; i += 100) await addTracks(playlistId, uris.slice(i, i + 100))
 }
 
 export async function removeTracks(playlistId, uris) {
@@ -188,6 +197,15 @@ export async function getListening() {
 }
 
 
+export async function getArtistGenres(ids) {
+  const out = {}
+  for (let i = 0; i < ids.length; i += 50) {
+    const data = await request(`/artists?ids=${ids.slice(i, i + 50).join(',')}`)
+    ;(data.artists ?? []).forEach((a) => a && (out[a.id] = a.genres ?? []))
+  }
+  return out
+}
+
 export async function getTracks(ids) {
   const results = await Promise.allSettled(ids.map((id) => request(`/tracks/${id}`)))
   return Object.fromEntries(
@@ -195,7 +213,23 @@ export async function getTracks(ids) {
   )
 }
 
-export async function searchTrack(title, artist) {
+const searchCache = new Map()
+
+export function searchTrack(title, artist) {
+  const key = `${normalize(artist)}|${normalize(title)}`
+  if (!searchCache.has(key)) {
+    searchCache.set(
+      key,
+      searchTrackRequest(title, artist).catch((err) => {
+        searchCache.delete(key)
+        throw err
+      })
+    )
+  }
+  return searchCache.get(key)
+}
+
+async function searchTrackRequest(title, artist) {
   const params = new URLSearchParams({ q: `track:${title} artist:${artist}`, type: 'track', limit: '5' })
   const data = await request(`/search?${params}`)
   const wantArtist = normalize(artist)

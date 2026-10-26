@@ -28,6 +28,14 @@ export function SpotifyProvider({ children }) {
       ])
       setData({ profile, liked, playlists, listening })
       setStatus('connected')
+      getLikedSongs(Infinity)
+        .then((all) =>
+          setData((prev) => {
+            const have = new Set(prev.liked.map((s) => s.id))
+            return { ...prev, liked: [...prev.liked, ...all.filter((s) => !have.has(s.id))] }
+          })
+        )
+        .catch(() => {})
     } catch (err) {
       setError(err.message)
       setStatus(err instanceof ReconnectError ? 'expired' : 'error')
