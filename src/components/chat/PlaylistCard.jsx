@@ -14,7 +14,9 @@ export default function PlaylistCard({ playlist, onOpen }) {
       )}
       <div className="min-w-0 flex-1">
         <p className="truncate text-[15px] font-semibold">{playlist.name}</p>
-        <p className="text-[13px] text-muted">{playlist.count} songs</p>
+        <p className="text-[13px] text-muted">
+          {playlist.count} songs{playlist.match != null ? ` · ${playlist.match}% match` : ''}
+        </p>
       </div>
       <span className="flex items-center gap-1 pr-1 text-sm font-semibold text-teal">
         Open

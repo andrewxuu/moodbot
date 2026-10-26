@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import SpotifyError from './SpotifyError'
 import { useSpotify } from '../../spotify/useSpotify'
-import { buildMoodSongs, describeProfile, isGoodMatch, matchPercent, profilePlaylists, rankProfiles } from '../../lib/playlistMood'
+import { mixName } from '../../lib/moodTags'
+import { buildMoodSongs, isGoodMatch, matchPercent, profilePlaylists, rankProfiles } from '../../lib/playlistMood'
 
-export default function PlaylistPick({ mood, savedSongs, onOpen }) {
+export default function PlaylistPick({ state, savedSongs, onOpen }) {
+  const mood = state?.mood ?? null
   const { status, profile, playlists, listening, createPlaylist, addSongs } = useSpotify()
   const [profiles, setProfiles] = useState(null)
   const [building, setBuilding] = useState(false)
@@ -20,15 +22,15 @@ export default function PlaylistPick({ mood, savedSongs, onOpen }) {
     }
   }, [status, profile?.id, playlists])
 
-  const best = useMemo(() => (profiles && mood ? rankProfiles(profiles, mood)[0] : null), [profiles, mood])
+  const best = useMemo(() => (profiles && mood ? rankProfiles(profiles, state.target)[0] : null), [profiles, mood, state])
 
   const build = async () => {
     setBuilding(true)
     setError(null)
     try {
-      const picks = await buildMoodSongs({ mood, saved: savedSongs, listening })
-      if (!picks.length) throw new Error(`Couldn’t find enough ${mood.toLowerCase()} songs yet. Try again.`)
-      const playlist = await createPlaylist(`${mood} mix`)
+      const picks = await buildMoodSongs({ mood, state, saved: savedSongs, listening })
+      if (!picks.length) throw new Error('Couldn’t find enough songs yet. Try again.')
+      const playlist = await createPlaylist(mixName(mood))
       await addSongs(playlist.id, picks)
       onOpen(playlist.id)
     } catch (err) {
@@ -49,7 +51,7 @@ export default function PlaylistPick({ mood, savedSongs, onOpen }) {
       {matched ? (
         <MatchCard best={best} onOpen={onOpen} />
       ) : (
-        <p className="text-sm text-muted">None of your playlists fit {mood.toLowerCase()} well.</p>
+        <p className="text-sm text-muted">None of your playlists fit how you feel right now.</p>
       )}
       <button
         type="button"
@@ -57,11 +59,11 @@ export default function PlaylistPick({ mood, savedSongs, onOpen }) {
         disabled={building}
         className={
           matched
-            ? 'text-sm text-teal underline-offset-2 hover:underline disabled:opacity-50'
+            ? 'text-sm font-semibold text-teal underline disabled:opacity-50'
             : 'h-10 rounded-full bg-teal px-5 text-[15px] text-white disabled:opacity-50'
         }
       >
-        {building ? 'Building…' : matched ? `Or build a new ${mood.toLowerCase()} mix` : `Build a ${mood.toLowerCase()} mix`}
+        {building ? 'Building…' : matched ? 'Or build a new mix' : 'Build a new mix'}
       </button>
       <SpotifyError error={error} />
     </div>
@@ -80,10 +82,6 @@ function MatchCard({ best, onOpen }) {
       <div className="min-w-0">
         <p className="truncate text-[15px] font-semibold">
           {playlist.name} <span className="ml-1.5 text-teal">{matchPercent(best.distance)}% match</span>
-        </p>
-        <p className="mt-0.5 text-[13px] text-muted">
-          {playlist.count !== null ? `${playlist.count} songs · ` : ''}
-          {describeProfile(best.profile)}
         </p>
       </div>
     </button>
