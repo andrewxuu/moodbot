@@ -124,7 +124,7 @@ export default function OnboardingPage() {
   const back = () => go(ids[index - 1])
 
   const connectSpotify = () => {
-    writeKey(STEP_KEY, ids[index + 1])
+    writeKey(STEP_KEY, 'spotify')
     connect()
   }
 
