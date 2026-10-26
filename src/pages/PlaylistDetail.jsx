@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, Clock, ExternalLink, Heart, Play, Plus, Search, Shuffle } from 'lucide-react'
 import PlaylistSongRow, { PLAYLIST_COLUMNS } from '../components/songs/PlaylistSongRow'
 import SegmentedSwitch from '../components/ui/SegmentedSwitch'
+import SourceFilter from '../components/songs/SourceFilter'
 import { getPlaylistSongs, NotOwnedError, replaceTracks } from '../spotify/api'
 import { useSpotify } from '../spotify/useSpotify'
 import { usePlayer } from '../spotify/usePlayer'
@@ -18,6 +19,8 @@ import ConfirmRemove from '../components/playlists/ConfirmRemove'
 
 const cache = playlistCache
 const ORIGINAL = 'Original'
+const FROM_CHAT = 'From chat'
+const FROM_SPOTIFY = 'From Spotify'
 const FIT_SONGS = 200
 const EXTEND_BY = 10
 const EXISTING_FEATURES = 300
@@ -59,6 +62,7 @@ export default function PlaylistDetail({ playlist, songs: fixedSongs, onBack, is
   const [query, setQuery] = useState('')
   const [removing, setRemoving] = useState(null)
   const [view, setView] = useState(ORIGINAL)
+  const [source, setSource] = useState(FROM_SPOTIFY)
   const [sync, setSync] = useState(null)
   const [extend, setExtend] = useState(null)
   const originalOrder = useRef(null)
@@ -181,7 +185,9 @@ export default function PlaylistDetail({ playlist, songs: fixedSongs, onBack, is
     }
   }
 
-  const ordered = adjusting ? sortByFit(state.songs, features, targetFor(mood, lifting, moodState)) : state.songs
+  const isLiked = Boolean(playlist.liked)
+  const listSongs = isLiked ? state.songs.filter((s) => (source === FROM_CHAT ? s.source === 'chat' : s.source !== 'chat')) : state.songs
+  const ordered = adjusting ? sortByFit(state.songs, features, targetFor(mood, lifting, moodState)) : listSongs
 
   const copies = removing ? state.songs.filter((s) => s.id === removing.id).length : 0
 
@@ -194,7 +200,7 @@ export default function PlaylistDetail({ playlist, songs: fixedSongs, onBack, is
   }
 
   const shown = ordered.filter((s) => matchesSearch(query, s.title, s.artist, s.album))
-  const summary = state.status === 'ready' ? `${state.songs.length} songs, ${totalLength(state.songs)}` : playlist.count !== null ? `${playlist.count} songs` : ''
+  const summary = state.status === 'ready' ? `${listSongs.length} songs, ${totalLength(listSongs)}` : playlist.count !== null ? `${playlist.count} songs` : ''
 
   const body = () => {
     if (state.status === 'loading') return <p role="status" className="text-[15px] text-muted">Loading songs…</p>
@@ -203,6 +209,7 @@ export default function PlaylistDetail({ playlist, songs: fixedSongs, onBack, is
     }
     if (state.status === 'error') return <p className="text-[15px] text-muted">{state.error} Try again in a moment.</p>
     if (!state.songs.length) return <p className="text-[15px] text-muted">This playlist doesn’t have any songs yet.</p>
+    if (!listSongs.length) return <p className="text-[15px] text-muted">{source === FROM_CHAT ? 'No songs saved from chat yet.' : 'No songs from Spotify yet.'}</p>
     if (!shown.length) return <p className="text-[15px] text-muted">No songs match “{query}”.</p>
 
     return (
@@ -251,7 +258,7 @@ export default function PlaylistDetail({ playlist, songs: fixedSongs, onBack, is
         <div className="min-w-0">
           <h1 className="truncate font-serif text-[30px] font-semibold">{playlist.name}</h1>
           {summary && <p className="mt-1 text-[15px] text-muted">{summary}</p>}
-          {ready && state.songs.length > 0 && (
+          {ready && listSongs.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-2">
               <button
                 type="button"
@@ -291,7 +298,13 @@ export default function PlaylistDetail({ playlist, songs: fixedSongs, onBack, is
               className="w-full bg-transparent text-[15px] outline-none placeholder:text-hint"
             />
           </label>
-          {mood ? (
+          {isLiked ? (
+            <SourceFilter
+              value={source}
+              onChange={setSource}
+              options={[FROM_CHAT, FROM_SPOTIFY].map((id) => ({ id, count: state.songs.filter((s) => (s.source === 'chat') === (id === FROM_CHAT)).length }))}
+            />
+          ) : mood ? (
             <div className="max-w-full overflow-x-auto">
               <SegmentedSwitch options={[ORIGINAL, MODES.match, MODES.lift]} value={view} onChange={changeView} size="sm" />
             </div>
