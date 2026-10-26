@@ -90,7 +90,7 @@ function Genres() {
   )
 }
 
-function SpotifyStep({ connected, expired, profile }) {
+function SpotifyStep({ connected, expired, profile, error }) {
   if (connected && profile) {
     return (
       <div className="flex flex-col items-center gap-3 rounded-[14px] bg-teal-soft p-5 text-center">
@@ -118,13 +118,18 @@ function SpotifyStep({ connected, expired, profile }) {
       <p className="text-[13px] text-muted">
         {connected ? 'Connected' : expired ? 'Your login expired. Connect again.' : 'You can skip this and connect later in settings.'}
       </p>
+      {error && !connected && (
+        <p role="alert" className="text-[13px] text-danger">
+          {error}
+        </p>
+      )}
     </div>
   )
 }
 
 export default function OnboardingPage() {
   const { user, guest, finishOnboarding } = useAccount()
-  const { status, connect, profile } = useSpotify()
+  const { status, connect, profile, error } = useSpotify()
   const [withAccount] = useState(() => !(user || guest))
   const ids = withAccount ? ['welcome', 'account', 'spotify', 'genres', 'look', 'tour'] : ['welcome', 'spotify', 'genres', 'look', 'tour']
   const [id, setId] = useState(() => {
@@ -180,7 +185,7 @@ export default function OnboardingPage() {
             <p className="text-[15px] text-muted">{copy[id][1]}</p>
           </div>
           {id === 'welcome' && <Features />}
-          {id === 'spotify' && <SpotifyStep connected={connected} expired={status === 'expired'} profile={profile} />}
+          {id === 'spotify' && <SpotifyStep connected={connected} expired={status === 'expired'} profile={profile} error={error} />}
           {id === 'genres' && (
             <>
               <Genres />
