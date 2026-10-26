@@ -6,7 +6,12 @@ const cors = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const fallback = { reply: 'Sorry, I lost my train of thought. Try that again?', mood: '', song_queries: [] }
+const fallback = { reply: 'Sorry, I lost my train of thought. Try that again?', mood: '', song_queries: [], stress: null }
+
+const toStress = (value: unknown) => {
+  const n = Math.round(Number(value))
+  return value != null && n >= 1 && n <= 5 ? n : null
+}
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } })
@@ -24,7 +29,10 @@ async function songs({ mood, count, avoid }: { mood: string; count: number; avoi
       generationConfig: { maxOutputTokens: 2048, responseMimeType: 'application/json' },
     }),
   })
-  if (!res.ok) return json({ songs: [] })
+  if (!res.ok) {
+    console.error('gemini songs failed', res.status, (await res.text()).slice(0, 400))
+    return json({ songs: [] })
+  }
 
   const data = await res.json()
   const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
@@ -33,6 +41,7 @@ async function songs({ mood, count, avoid }: { mood: string; count: number; avoi
     const list = (Array.isArray(parsed.songs) ? parsed.songs : []).filter((s: { title?: string; artist?: string }) => s?.title && s?.artist)
     return json({ songs: list.map((s: { title: string; artist: string }) => ({ title: String(s.title), artist: String(s.artist) })) })
   } catch {
+    console.error('gemini songs unparseable', text.slice(0, 200))
     return json({ songs: [] })
   }
 }
@@ -64,7 +73,10 @@ Deno.serve(async (req) => {
     }),
   })
 
-  if (!res.ok) return json(fallback)
+  if (!res.ok) {
+    console.error('gemini chat failed', model, res.status, (await res.text()).slice(0, 400))
+    return json(fallback)
+  }
 
   const data = await res.json()
   const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
@@ -75,8 +87,10 @@ Deno.serve(async (req) => {
       reply: String(parsed.reply ?? fallback.reply),
       mood: String(parsed.mood ?? ''),
       song_queries: Array.isArray(parsed.song_queries) ? parsed.song_queries : [],
+      stress: toStress(parsed.stress),
     })
   } catch {
+    console.error('gemini chat unparseable', data.candidates?.[0]?.finishReason, text.slice(0, 200))
     const partial = text.match(/"reply"\s*:\s*"((?:[^"\\]|\\.)*)/)
     return json({ ...fallback, reply: partial ? partial[1].replace(/\\n/g, ' ').replace(/\\"/g, '"') : fallback.reply })
   }

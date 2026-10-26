@@ -3,7 +3,6 @@ import { Heart, ListMusic, ListPlus, RefreshCw, Send } from 'lucide-react'
 import ChatDayPicker from '../components/chat/ChatDayPicker'
 import ChatMessage from '../components/chat/ChatMessage'
 import PlaylistCard from '../components/chat/PlaylistCard'
-import Chip from '../components/ui/Chip'
 import IconButton from '../components/ui/IconButton'
 import SegmentedSwitch from '../components/ui/SegmentedSwitch'
 import SongRow from '../components/songs/SongRow'
@@ -14,10 +13,12 @@ import { songs as sampleSongs } from '../data/data'
 import { moodKey, useFeedback } from '../feedback'
 import { chatDays, greetingText, loadChats, saveChat, todayKey } from '../data/sampleChats'
 import { askMuse } from '../services/chatLLM'
+import { checkInFor } from '../data/sampleMoods'
 import { sampleDataOn } from '../lib/devMode'
 import { buildMoodSongs, isGoodMatch, matchPercent, profilePlaylists, rankProfiles } from '../lib/playlistMood'
-import { MODES, MOOD_NAMES, canonMood, mixName, stateFor, targetFor } from '../lib/moodTags'
-import { useRatings } from '../ratings'
+import { MODES, canonMood, mixName, stateFor, targetFor } from '../lib/moodTags'
+import StressFace from '../components/ui/StressFace'
+import { ratingMood, stressLabel, stressValue, useRatings } from '../ratings'
 
 const SAMPLE_REASON = 'Sample picks. Connect Spotify to get picks from your own listening.'
 const greeting = { id: 0, from: 'bot', text: greetingText }
@@ -25,14 +26,16 @@ const SPOTIFY_REASON = 'Picked from your recent Spotify listening.'
 const wantsPlaylist = (text) => /\b(make|create|build|start|put together)\b.*\bplaylist\b/i.test(text)
 const asksForPlaylists = (text) => /\b(recommend|suggest|show|find|pick|which|any)\b.*\bplaylists?\b/i.test(text)
 
+const isRecent = (at) => Date.now() - new Date(at).getTime() < 3 * 60 * 1000
+
 export default function ChatPage({ savedSongs, isSaved, onSave, onOpenPlaylist, onOpenLiked }) {
   const { status, profile, playlists, listening, liked, createPlaylist, addSongs } = useSpotify()
   const { forMood, ratingOf, rate } = useFeedback()
-  const { ratings } = useRatings()
+  const { ratings, addRating, removeRating } = useRatings()
   const todayRatings = ratings.filter((r) => new Date(r.at).toDateString() === new Date().toDateString())
-  const state = todayRatings.length ? stateFor({ stress: todayRatings[0].rating, recent: todayRatings.map((r) => r.rating).reverse() }) : null
+  const state = todayRatings.length ? stateFor({ stress: stressValue(todayRatings[0].rating), recent: todayRatings.map((r) => stressValue(r.rating)).reverse() }) : null
+  const stressOf = (date) => checkInFor(date)?.mood ?? null
   const stateIf = (mood) => (state?.mood === mood ? state : undefined)
-  const chips = state ? [state.mood, ...MOOD_NAMES.filter((m) => m !== state.mood)] : MOOD_NAMES
   const noMusic = listening.length === 0
   const isSample = noMusic && sampleDataOn()
   const pool = isSample ? sampleSongs : listening
@@ -90,6 +93,20 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onOpenPlaylist, 
     picks.songs.forEach((s) => shown.current[key].set(s.id, s))
 
     setMessages((m) => m.map((msg) => (msg.id === id ? { id, from: 'bot', mood, ...picks } : msg)))
+  }
+
+  const applyStress = (level) => {
+    if (!Number.isInteger(level) || level < 1 || level > 5) return null
+    const last = todayRatings[0]
+    if (last?.rating === level) return null
+    if (last && isRecent(last.at)) return null
+    const ratingId = addRating(level, { note: 'From chat', source: 'chat' })
+    return { id: nextId.current++, from: 'bot', stressNote: { ratingId, level, backTo: last?.rating ?? null, undone: false } }
+  }
+
+  const undoStress = (msg) => {
+    removeRating(msg.stressNote.ratingId)
+    setMessages((m) => m.map((x) => (x.id === msg.id ? { ...x, stressNote: { ...x.stressNote, undone: true } } : x)))
   }
 
   const botSay = (text) => setMessages((m) => [...m, { id: nextId.current++, from: 'bot', text }])
@@ -161,8 +178,10 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onOpenPlaylist, 
     if (!llm) return respond(detectMood(clean))
 
     const replyMsg = { id: nextId.current++, from: 'bot', text: llm.reply }
-    if (!llm.song_queries.length) return setMessages((m) => [...m, replyMsg])
-    respond(detectMood(llm.mood) || detectMood(clean), [], [replyMsg])
+    const noteMsg = applyStress(llm.stress)
+    const lead = noteMsg ? [replyMsg, noteMsg] : [replyMsg]
+    if (!llm.song_queries.length) return setMessages((m) => [...m, ...lead])
+    respond(detectMood(llm.mood) || detectMood(clean), [], lead)
   }
 
   const moreLikeThis = (msg) => respond(msg.mood, msg.songs.map((s) => s.id))
@@ -185,7 +204,7 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onOpenPlaylist, 
       <section className="flex min-w-0 flex-1 flex-col items-center gap-3.5 px-4 py-5 md:gap-[18px] md:px-8 md:py-8 xl:px-10">
         <div className="flex w-full items-center gap-3">
           <h1 className="font-serif text-[26px] font-semibold md:text-[30px]">Chat</h1>
-          <ChatDayPicker days={days} value={viewDay} onChange={setViewDay} />
+          <ChatDayPicker days={days} value={viewDay} onChange={setViewDay} stressOf={stressOf} />
           <button
             type="button"
             onClick={() => setSavedOpen(true)}
@@ -203,6 +222,25 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onOpenPlaylist, 
                 <ChatMessage key={msg.id} from="user" width={400}>
                   {msg.text}
                 </ChatMessage>
+              )
+            }
+            if (msg.stressNote) {
+              const n = msg.stressNote
+              const canUndo = isToday && !n.undone && ratings.some((r) => r.id === n.ratingId)
+              return (
+                <p key={msg.id} role="status" className="flex items-center gap-2 px-1 text-[13px] text-muted">
+                  <StressFace mood={n.undone && !n.backTo ? null : ratingMood(n.undone ? n.backTo : n.level)} size={22} />
+                  {n.undone
+                    ? n.backTo
+                      ? `Back to ${stressLabel(n.backTo)}`
+                      : 'Stress update removed'
+                    : `Stress updated to ${stressLabel(n.level)}`}
+                  {canUndo && (
+                    <button type="button" onClick={() => undoStress(msg)} className="font-semibold text-teal hover:underline">
+                      Undo
+                    </button>
+                  )}
+                </p>
               )
             }
             if (msg.pending) {
@@ -305,13 +343,6 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onOpenPlaylist, 
           </div>
         ) : (
           <div className="flex w-full max-w-[700px] flex-col gap-3">
-            <div className="flex flex-wrap gap-2">
-              {chips.map((m) => (
-                <Chip key={m} onClick={() => send(m)}>
-                  {m}
-                </Chip>
-              ))}
-            </div>
             <SegmentedSwitch options={[MODES.match, MODES.lift]} value={mode} onChange={setMode} />
             <div className="flex items-center gap-2.5">
               <input
