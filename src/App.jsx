@@ -12,6 +12,7 @@ import { SpotifyProvider, useSpotify } from './spotify/useSpotify'
 import { PlayerProvider } from './spotify/usePlayer'
 import { FeedbackProvider } from './feedback'
 import { AccountProvider, useAccount } from './account'
+import { AppearanceProvider } from './appearance'
 import { cloudPush } from './lib/cloudSync'
 import { useDevMode } from './lib/devMode'
 import AuthPage from './pages/AuthPage'
@@ -36,15 +37,17 @@ export default function App() {
   return (
     <ThemeProvider>
       <AccountProvider>
-        <SpotifyProvider>
-          <PlayerProvider>
-            <FeedbackProvider>
-              <RatingsProvider>
-                <Gate />
-              </RatingsProvider>
-            </FeedbackProvider>
-          </PlayerProvider>
-        </SpotifyProvider>
+        <AppearanceProvider>
+          <SpotifyProvider>
+            <PlayerProvider>
+              <FeedbackProvider>
+                <RatingsProvider>
+                  <Gate />
+                </RatingsProvider>
+              </FeedbackProvider>
+            </PlayerProvider>
+          </SpotifyProvider>
+        </AppearanceProvider>
       </AccountProvider>
     </ThemeProvider>
   )

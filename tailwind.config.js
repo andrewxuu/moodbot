@@ -14,6 +14,7 @@ export default {
         muted: v('muted'),
         hint: v('hint'),
         art: v('art'),
+        danger: v('danger'),
         teal: { DEFAULT: v('teal'), soft: v('teal-soft') },
         mood: {
           great: v('mood-great'),

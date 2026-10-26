@@ -63,7 +63,7 @@ export default function ConfirmRemove({ song, playlistName, copies, onConfirm, o
             type="button"
             onClick={confirm}
             disabled={busy}
-            className="h-10 rounded-full bg-mood-awful px-4 text-[15px] font-semibold text-white disabled:opacity-60"
+            className="h-10 rounded-full bg-danger px-4 text-[15px] font-semibold text-white disabled:opacity-60"
           >
             {busy ? 'Removing…' : 'Remove'}
           </button>

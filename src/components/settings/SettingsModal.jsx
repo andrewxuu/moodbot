@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { ChevronRight, Monitor, Moon, Music, Sun, X } from 'lucide-react'
 import GenrePrefs from './GenrePrefs'
+import { PaletteDropdown } from './AppearancePicker'
 import Toggle from '../ui/Toggle'
 import { useSpotify } from '../../spotify/useSpotify'
 import { useTheme } from '../../theme'
@@ -141,7 +142,7 @@ export default function SettingsModal({ onClose, onLogOut }) {
               <button
                 type="button"
                 onClick={onLogOut}
-                className="w-full px-4 py-3.5 text-left text-[15px] font-semibold text-mood-awful hover:bg-cream"
+                className="w-full px-4 py-3.5 text-left text-[15px] font-semibold text-danger hover:bg-cream"
               >
                 {guest && !user ? 'Create account or log in' : 'Log out'}
               </button>
@@ -169,6 +170,9 @@ export default function SettingsModal({ onClose, onLogOut }) {
                 </button>
               )
             })}
+          </div>
+          <div className="mt-3">
+            <PaletteDropdown />
           </div>
         </Group>
 
@@ -227,7 +231,7 @@ export default function SettingsModal({ onClose, onLogOut }) {
               <button
                 type="button"
                 onClick={() => setDevMode(false)}
-                className="w-full px-4 py-3.5 text-left text-[15px] font-semibold text-mood-awful hover:bg-cream"
+                className="w-full px-4 py-3.5 text-left text-[15px] font-semibold text-danger hover:bg-cream"
               >
                 Turn off dev mode
               </button>

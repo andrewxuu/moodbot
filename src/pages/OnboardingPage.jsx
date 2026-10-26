@@ -1,7 +1,9 @@
 import { useState } from 'react'
-import { ChartColumn, Check, Heart, MessageCircle, Music, Smile } from 'lucide-react'
+import { ChartColumn, Check, Heart, MessageCircle, Music, Settings, Smile } from 'lucide-react'
 import CardFrame from '../components/layout/CardFrame'
+import Logo from '../components/ui/Logo'
 import AuthForm from '../components/auth/AuthForm'
+import AppearancePicker from '../components/settings/AppearancePicker'
 import { useAccount } from '../account'
 import { useSpotify } from '../spotify/useSpotify'
 import { genres, useGenrePrefs } from '../lib/genrePrefs'
@@ -54,6 +56,15 @@ function Tour() {
   )
 }
 
+function SettingsNote({ children }) {
+  return (
+    <p className="flex items-center gap-1.5 text-[12px] text-muted">
+      <Settings size={13} className="shrink-0" aria-hidden="true" />
+      {children}
+    </p>
+  )
+}
+
 function Genres() {
   const { liked, toggle } = useGenrePrefs()
   return (
@@ -94,7 +105,7 @@ export default function OnboardingPage() {
   const { user, guest, finishOnboarding } = useAccount()
   const { status, connect } = useSpotify()
   const [withAccount] = useState(() => !(user || guest))
-  const ids = withAccount ? ['welcome', 'account', 'spotify', 'genres', 'tour'] : ['welcome', 'spotify', 'genres', 'tour']
+  const ids = withAccount ? ['welcome', 'account', 'spotify', 'genres', 'look', 'tour'] : ['welcome', 'spotify', 'genres', 'look', 'tour']
   const [id, setId] = useState(() => {
     const saved = readKey(STEP_KEY)
     if (ids.includes(saved)) return saved
@@ -121,6 +132,7 @@ export default function OnboardingPage() {
     welcome: ['Welcome to Muse', 'Tell it how you feel. It finds songs that fit your mood.'],
     spotify: ['Connect Spotify', 'Muse uses Spotify to play songs and save playlists.'],
     genres: ['Pick your genres', 'Choose what you like. Muse uses it when picking songs.'],
+    look: ['Make it yours', 'Pick a site palette and a stress palette.'],
     tour: ['Quick tour', 'Everything is in the sidebar.'],
   }
 
@@ -142,12 +154,24 @@ export default function OnboardingPage() {
       ) : (
         <>
           <div className="flex flex-col gap-1.5">
+            {id === 'welcome' && <Logo size={64} className="mb-2" />}
             <h1 className="font-serif text-[28px] font-semibold sm:text-[32px]">{copy[id][0]}</h1>
             <p className="text-[15px] text-muted">{copy[id][1]}</p>
           </div>
           {id === 'welcome' && <Features />}
           {id === 'spotify' && <SpotifyStep connected={connected} expired={status === 'expired'} />}
-          {id === 'genres' && <Genres />}
+          {id === 'genres' && (
+            <>
+              <Genres />
+              <SettingsNote>You can change your genres anytime in Settings.</SettingsNote>
+            </>
+          )}
+          {id === 'look' && (
+            <>
+              <AppearancePicker />
+              <SettingsNote>You can change your palettes anytime in Settings.</SettingsNote>
+            </>
+          )}
           {id === 'tour' && <Tour />}
         </>
       )}
@@ -180,7 +204,7 @@ export default function OnboardingPage() {
               Connect Spotify
             </button>
           ))}
-        {id === 'genres' && (
+        {(id === 'genres' || id === 'look') && (
           <button type="button" onClick={next} className={primary}>
             Continue
           </button>

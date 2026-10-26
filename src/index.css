@@ -23,13 +23,14 @@
   --c-muted: 91 88 80;
   --c-hint: 138 138 138;
   --c-art: 214 222 232;
-  --c-teal: 47 111 106;
-  --c-teal-soft: 230 239 236;
+  --c-teal: 24 116 130;
+  --c-teal-soft: 221 241 244;
   --c-mood-great: 28 74 134;
   --c-mood-good: 74 138 224;
   --c-mood-okay: 132 129 122;
   --c-mood-low: 217 122 34;
   --c-mood-awful: 179 50 42;
+  --c-danger: 179 50 42;
 }
 
 :root.dark {
@@ -42,14 +43,35 @@
   --c-muted: 168 163 151;
   --c-hint: 124 120 111;
   --c-art: 51 55 61;
-  --c-teal: 70 158 149;
-  --c-teal-soft: 31 52 50;
+  --c-teal: 70 170 186;
+  --c-teal-soft: 24 54 60;
   --c-mood-great: 79 96 220;
   --c-mood-good: 74 156 220;
   --c-mood-okay: 122 119 111;
   --c-mood-low: 201 129 42;
   --c-mood-awful: 195 48 74;
+  --c-danger: 195 48 74;
 }
+
+:root[data-accent='sunset'] { --c-teal: 201 78 62; --c-teal-soft: 255 232 214; }
+:root.dark[data-accent='sunset'] { --c-teal: 240 120 100; --c-teal-soft: 66 36 30; }
+:root[data-accent='lilac'] { --c-teal: 109 78 224; --c-teal-soft: 234 228 255; }
+:root.dark[data-accent='lilac'] { --c-teal: 150 128 255; --c-teal-soft: 40 34 70; }
+:root[data-accent='forest'] { --c-teal: 46 125 82; --c-teal-soft: 224 241 230; }
+:root.dark[data-accent='forest'] { --c-teal: 90 178 128; --c-teal-soft: 28 52 40; }
+:root[data-accent='rose'] { --c-teal: 190 54 112; --c-teal-soft: 252 228 238; }
+:root.dark[data-accent='rose'] { --c-teal: 235 110 160; --c-teal-soft: 66 30 46; }
+:root[data-accent='night'] { --c-teal: 55 62 120; --c-teal-soft: 228 230 245; }
+:root.dark[data-accent='night'] { --c-teal: 140 150 235; --c-teal-soft: 34 36 66; }
+
+:root[data-stress='traffic'] { --c-mood-great: 46 140 90; --c-mood-good: 112 156 40; --c-mood-okay: 176 128 10; --c-mood-low: 210 100 30; --c-mood-awful: 196 56 48; }
+:root.dark[data-stress='traffic'] { --c-mood-great: 60 165 110; --c-mood-good: 130 170 60; --c-mood-okay: 190 145 30; --c-mood-low: 215 120 50; --c-mood-awful: 205 65 75; }
+:root[data-stress='dusk'] { --c-mood-great: 36 120 168; --c-mood-good: 70 98 200; --c-mood-okay: 112 80 210; --c-mood-low: 150 60 170; --c-mood-awful: 96 36 130; }
+:root.dark[data-stress='dusk'] { --c-mood-great: 70 160 205; --c-mood-good: 100 130 235; --c-mood-okay: 140 110 245; --c-mood-low: 180 90 205; --c-mood-awful: 130 70 175; }
+:root[data-stress='warm'] { --c-mood-great: 180 120 10; --c-mood-good: 200 100 30; --c-mood-okay: 210 80 50; --c-mood-low: 190 50 50; --c-mood-awful: 140 30 40; }
+:root.dark[data-stress='warm'] { --c-mood-great: 205 150 40; --c-mood-good: 215 125 50; --c-mood-okay: 220 100 65; --c-mood-low: 205 70 70; --c-mood-awful: 165 50 60; }
+:root[data-stress='mono'] { --c-mood-great: 106 120 133; --c-mood-good: 88 102 115; --c-mood-okay: 70 83 96; --c-mood-low: 52 64 76; --c-mood-awful: 31 42 51; }
+:root.dark[data-stress='mono'] { --c-mood-great: 150 162 174; --c-mood-good: 128 140 152; --c-mood-okay: 106 118 130; --c-mood-low: 84 96 108; --c-mood-awful: 62 72 84; }
 
 body {
   @apply bg-cream font-sans text-ink;

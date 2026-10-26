@@ -1,7 +1,7 @@
 import { supabase } from './supabase'
 
-const FIELDS = { genres: 'moodbot:genres', saved: 'moodbot:saved-songs' }
-const EMPTY = { genres: { liked: [], avoided: [] }, saved: [] }
+const FIELDS = { genres: 'moodbot:genres', saved: 'moodbot:saved-songs', appearance: 'moodbot:appearance' }
+const EMPTY = { genres: { liked: [], avoided: [] }, saved: [], appearance: { accent: 'ocean', stress: 'default' } }
 const timers = {}
 let userId = null
 
@@ -22,12 +22,17 @@ export async function pushAll(id) {
   const row = { user_id: id, updated_at: new Date().toISOString() }
   for (const [field, key] of Object.entries(FIELDS)) row[field] = readJson(key) ?? EMPTY[field]
   const { error } = await supabase.from('user_data').upsert(row)
-  if (error) throw error
+  if (!error) return
+  const base = { ...row }
+  delete base.appearance
+  const retry = await supabase.from('user_data').upsert(base)
+  if (retry.error) throw retry.error
 }
 
 export async function pullCloud(id) {
   if (!supabase) return
-  const { data, error } = await supabase.from('user_data').select('genres, saved').eq('user_id', id).maybeSingle()
+  let { data, error } = await supabase.from('user_data').select('genres, saved, appearance').eq('user_id', id).maybeSingle()
+  if (error) ({ data, error } = await supabase.from('user_data').select('genres, saved').eq('user_id', id).maybeSingle())
   if (error) throw error
   if (!data) return pushAll(id)
   for (const [field, key] of Object.entries(FIELDS)) {

@@ -1,9 +1,10 @@
-import { Check, X } from 'lucide-react'
+import { useId, useState } from 'react'
+import { Check, ChevronDown, X } from 'lucide-react'
 import { genres, useGenrePrefs } from '../../lib/genrePrefs'
 
 const styles = {
   liked: { on: 'border-teal bg-teal-soft font-semibold text-teal', icon: Check },
-  avoided: { on: 'border-mood-awful bg-mood-awful/10 font-semibold text-mood-awful', icon: X },
+  avoided: { on: 'border-danger bg-danger/10 font-semibold text-danger', icon: X },
 }
 
 function GenreList({ title, detail, list, selected, onToggle }) {
@@ -39,10 +40,30 @@ function GenreList({ title, detail, list, selected, onToggle }) {
 
 export default function GenrePrefs() {
   const { liked, avoided, toggle } = useGenrePrefs()
+  const [open, setOpen] = useState(false)
+  const panelId = useId()
+
   return (
-    <div className="divide-y divide-line overflow-hidden rounded-[14px] border border-line">
-      <GenreList title="Genres you like" detail="Picks lean toward these" list="liked" selected={liked} onToggle={toggle} />
-      <GenreList title="Genres to avoid" detail="Never picked, even if they match your mood" list="avoided" selected={avoided} onToggle={toggle} />
+    <div className="flex flex-col gap-3">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={panelId}
+        onClick={() => setOpen((o) => !o)}
+        className="flex h-12 items-center gap-3 rounded-[14px] border border-line bg-surface px-4 text-left hover:border-teal"
+      >
+        <span className="flex-1 text-[15px] font-semibold">Genres</span>
+        <span className="text-[13px] text-muted">
+          {liked.length} liked, {avoided.length} avoided
+        </span>
+        <ChevronDown size={18} aria-hidden="true" className={`shrink-0 text-muted transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div id={panelId} className="divide-y divide-line overflow-hidden rounded-[14px] border border-line">
+          <GenreList title="Genres you like" detail="Picks lean toward these" list="liked" selected={liked} onToggle={toggle} />
+          <GenreList title="Genres to avoid" detail="Never picked, even if they match your mood" list="avoided" selected={avoided} onToggle={toggle} />
+        </div>
+      )}
     </div>
   )
 }
