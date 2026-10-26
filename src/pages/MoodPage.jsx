@@ -12,7 +12,7 @@ import { moodLevels } from '../data/data'
 import { sampleDataOn } from '../lib/devMode'
 import { checkInFor, checkInsBetween, daysBetween } from '../data/sampleMoods'
 import { periodStats } from '../lib/moodStats'
-import { chatStats, songStats } from '../lib/musicStats'
+import { chatStats, songStats, useSongGenres } from '../lib/musicStats'
 import { moodLabel as label } from '../lib/moodMonth'
 import { useRatings } from '../ratings'
 
@@ -64,6 +64,7 @@ function PeriodNav({ title, onPrev, onNext, canGoNext, unit }) {
 
 export default function MoodPage({ savedSongs = [] }) {
   useRatings()
+  const savedWithGenres = useSongGenres(savedSongs)
   const [range, setRange] = useState('Week')
   const [offset, setOffset] = useState(0)
   const [monthView, setMonthView] = useState('Calendar')
@@ -153,7 +154,7 @@ export default function MoodPage({ savedSongs = [] }) {
       <MusicChatStats
         chats={chatStats(daysBetween(period.start, period.end))}
         checkIns={periodCheckIns.length}
-        songs={songStats(savedSongs)}
+        songs={songStats(savedWithGenres)}
         periodLabel={period.title}
       />
 
