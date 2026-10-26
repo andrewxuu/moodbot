@@ -1,4 +1,5 @@
-import { ChartColumn, House, List, MessageCircle, Music } from 'lucide-react'
+import { ChartColumn, House, List, MessageCircle } from 'lucide-react'
+import Logo from '../ui/Logo'
 import { useSpotify } from '../../spotify/useSpotify'
 import { useAccount } from '../../account'
 import { useDevMode } from '../../lib/devMode'
@@ -62,9 +63,7 @@ export default function Sidebar({ page, onNavigate, onOpenSettings }) {
     <>
       <aside className="hidden h-full w-[72px] shrink-0 flex-col gap-7 overflow-y-auto border-r border-line bg-surface px-3 py-7 md:flex lg:w-[248px] lg:px-[18px]">
         <div className="flex items-center justify-center gap-2.5 lg:justify-start">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-teal text-white">
-            <Music size={18} />
-          </div>
+          <Logo size={36} className="shrink-0" />
           <p className="hidden font-serif text-[22px] font-semibold lg:block">Muse</p>
         </div>
         <div className="-mt-4 flex justify-center lg:justify-start">
