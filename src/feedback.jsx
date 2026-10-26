@@ -9,7 +9,12 @@ export const moodKey = (mood) => mood ?? 'Any'
 
 const load = () => {
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) ?? {}
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY)) ?? {}
+    if (saved['Some stress']) {
+      const { 'Some stress': old, ...rest } = saved
+      return { ...rest, Meh: rest.Meh ?? old }
+    }
+    return saved
   } catch {
     return {}
   }

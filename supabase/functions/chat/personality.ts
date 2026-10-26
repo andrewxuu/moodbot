@@ -19,6 +19,12 @@ Reply with only valid JSON, no extra text:
 {
   "reply": "what you say to the user",
   "mood": "one or two words, like 'tired' or 'hyped'",
-  "song_queries": ["2 to 4 short search phrases for finding songs that fit, like 'mellow indie acoustic' or 'upbeat dance pop'"]
+  "song_queries": ["2 to 4 short search phrases for finding songs that fit, like 'mellow indie acoustic' or 'upbeat dance pop'"],
+  "stress": 3
 }
-If it is not the right time for songs, use an empty list for song_queries.`;
+If it is not the right time for songs, use an empty list for song_queries.
+
+About "stress":
+- It is how stressed the user sounds right now: 1 calm, 2 relaxed, 3 meh, 4 stressed, 5 very stressed.
+- Use a whole number only when the user clearly says or shows how they feel in their latest message.
+- Use null for small talk, questions, song requests, and anything unclear. When unsure, use null.`;

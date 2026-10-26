@@ -1,8 +1,8 @@
 import { useSpotify } from '../spotify/useSpotify'
 import { useState } from 'react'
 import { CircleCheck } from 'lucide-react'
-import { moodBg } from '../lib/moodMonth'
-import { ratingMood, stressLabel, useRatings } from '../ratings'
+import StressFace from '../components/ui/StressFace'
+import { ratingMood, stressLabel, stressValue, useRatings } from '../ratings'
 import SongRow from '../components/songs/SongRow'
 import PlaylistDetail from './PlaylistDetail'
 import PlaylistPick from '../components/playlists/PlaylistPick'
@@ -62,9 +62,10 @@ function MoodRating() {
 
   return (
     <Section title="Rate your stress">
-      <div role="radiogroup" aria-label="Stress from 1, calm, to 10, very stressed" className="grid grid-cols-10 gap-1.5">
-        {Array.from({ length: 10 }, (_, i) => {
+      <div role="radiogroup" aria-label="Stress from 1, calm, to 5, very stressed" className="grid grid-cols-5 gap-2">
+        {Array.from({ length: 5 }, (_, i) => {
           const value = i + 1
+          const mood = ratingMood(value)
           const on = current?.rating === value
           return (
             <button
@@ -72,20 +73,15 @@ function MoodRating() {
               type="button"
               role="radio"
               aria-checked={on}
-              aria-label={`${value} out of 10, ${stressLabel(value)}`}
+              aria-label={`${value} out of 5, ${stressLabel(value)}`}
               onClick={() => pick(value)}
-              className={`h-11 rounded-[10px] border text-[15px] font-semibold ${
-                on ? `border-transparent text-white ${moodBg[ratingMood(value)]}` : 'border-line bg-surface hover:border-teal'
-              }`}
+              className="flex flex-col items-center gap-1.5 rounded-[10px] py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal"
             >
-              {value}
+              <StressFace mood={mood} size={56} ring={on} dim={!on && !!current} />
+              <span className={`text-center text-[12px] leading-tight ${on ? 'font-semibold' : 'text-muted'}`}>{stressLabel(value)}</span>
             </button>
           )
         })}
-      </div>
-      <div className="flex justify-between text-xs text-muted">
-        <span>Calm</span>
-        <span>Very stressed</span>
       </div>
 
       {current && (
@@ -93,10 +89,10 @@ function MoodRating() {
           <p role="status" className="flex flex-wrap items-center gap-x-1.5 text-sm">
             <CircleCheck size={16} className="text-teal" aria-hidden="true" />
             <span className="font-semibold">
-              Logged {current.rating}/10 ({stressLabel(current.rating)})
+              Logged {current.rating}/5 ({stressLabel(current.rating)})
             </span>
             at {timeOf(current.at)}
-            <span className="text-muted">· Tap another number to change it</span>
+            <span className="text-muted">· Tap another level to change it</span>
           </p>
           <textarea
             value={draft}
@@ -215,8 +211,8 @@ export default function HomePage({ savedSongs, isSaved, onSave, onNavigate, onOp
   const firstName = profile?.name?.split(' ')[0]
   const greeting = greetingFor(new Date().getHours())
   const todays = ratings.find((r) => isToday(r.at))
-  const recent = ratings.filter((r) => isToday(r.at)).map((r) => r.rating).reverse()
-  const state = todays ? stateFor({ stress: todays.rating, recent }) : null
+  const recent = ratings.filter((r) => isToday(r.at)).map((r) => stressValue(r.rating)).reverse()
+  const state = todays ? stateFor({ stress: stressValue(todays.rating), recent }) : null
 
   if (openPlaylist) {
     return <PlaylistDetail playlist={openPlaylist} onBack={() => setOpenPlaylistId(null)} isSaved={isSaved} onSave={onSave} />

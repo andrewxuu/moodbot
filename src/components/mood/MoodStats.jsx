@@ -1,7 +1,8 @@
 import { Minus, TrendingDown, TrendingUp } from 'lucide-react'
-import { moodBg, moodLabel, scoreMood } from '../../lib/moodMonth'
+import { moodLabel, scoreMood } from '../../lib/moodMonth'
+import StressFace from '../ui/StressFace'
 
-const Dot = ({ mood }) => <span className={`size-2.5 shrink-0 rounded-full ${moodBg[mood]}`} />
+const Dot = ({ mood }) => <StressFace mood={mood} size={18} />
 
 function Card({ label, children, sub }) {
   return (

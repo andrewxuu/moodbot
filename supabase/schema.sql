@@ -2,6 +2,7 @@ create table if not exists public.user_data (
   user_id uuid primary key references auth.users (id) on delete cascade,
   genres jsonb,
   saved jsonb,
+  appearance jsonb,
   updated_at timestamptz not null default now()
 );
 
@@ -23,3 +24,5 @@ create policy "Users update their own data"
 create policy "Users delete their own data"
   on public.user_data for delete
   using (auth.uid() = user_id);
+
+alter table public.user_data add column if not exists appearance jsonb;

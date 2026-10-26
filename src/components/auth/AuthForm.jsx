@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAccount } from '../../account'
+import Logo from '../ui/Logo'
 
 const primary = 'h-11 w-full rounded-[14px] bg-teal px-5 text-[15px] font-semibold text-white disabled:opacity-60'
 const secondary = 'h-11 w-full rounded-[14px] border border-line px-5 text-[15px] font-semibold hover:border-teal'
@@ -77,6 +78,7 @@ export default function AuthForm({ initialMode = 'create', onDone }) {
   return (
     <form onSubmit={submit} noValidate className="flex flex-col gap-4">
       <div className="flex flex-col gap-1.5">
+        <Logo size={64} className="mb-2" />
         <h1 className="font-serif text-[28px] font-semibold sm:text-[32px]">{creating ? 'Create your account' : 'Welcome back'}</h1>
         <p className="text-[15px] text-muted">
           {creating ? 'Save your songs, moods, and genres on every device.' : 'Log in to pick up where you left off.'}
@@ -101,7 +103,7 @@ export default function AuthForm({ initialMode = 'create', onDone }) {
       />
 
       {error && (
-        <p role="alert" className="text-[14px] text-mood-awful">
+        <p role="alert" className="text-[14px] text-danger">
           {error}
         </p>
       )}

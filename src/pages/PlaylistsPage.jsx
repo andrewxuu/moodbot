@@ -160,7 +160,7 @@ export default function PlaylistsPage({ savedSongs, isSaved, onSave, initialOpen
             type="button"
             disabled={!picked.length}
             onClick={() => setConfirming(true)}
-            className="flex h-10 items-center gap-1.5 rounded-full bg-mood-awful px-4 text-[15px] font-semibold text-white disabled:opacity-40"
+            className="flex h-10 items-center gap-1.5 rounded-full bg-danger px-4 text-[15px] font-semibold text-white disabled:opacity-40"
           >
             <Trash2 size={16} />
             Delete

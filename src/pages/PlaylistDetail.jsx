@@ -12,7 +12,7 @@ import { fillGenres, topGenres } from '../lib/genreMatch'
 import { discoverSongs } from '../picks'
 import { isLastfmConfigured } from '../services/lastfm'
 import { getAudioFeatures } from '../services/reccobeats'
-import { useRatings } from '../ratings'
+import { stressValue, useRatings } from '../ratings'
 import ConfirmRemove from '../components/playlists/ConfirmRemove'
 
 const cache = playlistCache
@@ -75,7 +75,7 @@ export default function PlaylistDetail({ playlist, songs: fixedSongs, onBack, is
   }, [playlist.id, notMine, fixed])
 
   const today = ratings.filter((r) => new Date(r.at).toDateString() === new Date().toDateString())
-  const moodState = today.length ? stateFor({ stress: today[0].rating, recent: today.map((r) => r.rating).reverse() }) : null
+  const moodState = today.length ? stateFor({ stress: stressValue(today[0].rating), recent: today.map((r) => stressValue(r.rating)).reverse() }) : null
   const mood = moodState?.mood ?? null
   const lifting = view === MODES.lift
   const adjusting = Boolean(mood) && view !== ORIGINAL
@@ -283,7 +283,7 @@ export default function PlaylistDetail({ playlist, songs: fixedSongs, onBack, is
             </p>
           )}
           {sync && mood && (
-            <p role="status" className={`text-[13px] ${sync === 'error' ? 'text-mood-awful' : 'text-muted'}`}>
+            <p role="status" className={`text-[13px] ${sync === 'error' ? 'text-danger' : 'text-muted'}`}>
               {SYNC_TEXT[sync]}
             </p>
           )}

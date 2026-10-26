@@ -26,8 +26,8 @@ export const STATES = {
     mix: 'Easy',
     ask: 'easy feel-good',
   },
-  'Some stress': {
-    words: ['some stress', 'focus', 'study', 'work', 'busy', 'homework', 'concentrate', 'deadline', 'nervous', 'restless', 'tense', 'on edge', 'long day'],
+  Meh: {
+    words: ['meh', 'some stress', 'focus', 'study', 'work', 'busy', 'homework', 'concentrate', 'deadline', 'nervous', 'restless', 'tense', 'on edge', 'long day'],
     genres: ['lo-fi', 'ambient', 'classical', 'instrumental', 'piano', 'post-rock', 'soundtrack'],
     tags: ['instrumental', 'study', 'focus', 'concentration', 'ambient', 'lo-fi', 'post-rock', 'minimal', 'piano', 'soundtrack'],
     target: { energy: 0.55, valence: 0.45, danceability: 0.5, acousticness: 0.35 },
@@ -43,7 +43,7 @@ export const STATES = {
     tags: ['energetic', 'intense', 'workout', 'aggressive', 'rock', 'driving', 'hype', 'upbeat', 'banger', 'cathartic'],
     target: { energy: 0.7, valence: 0.35, danceability: 0.5, acousticness: 0.2 },
     opposite: 'Calm',
-    lift: 'Some stress',
+    lift: 'Meh',
     feel: 'driving, to let it out',
     mix: 'Release',
     ask: 'driving, cathartic',
@@ -54,7 +54,7 @@ export const STATES = {
     tags: ['sad', 'melancholy', 'melancholic', 'emotional', 'lonely', 'heartbreak', 'bittersweet', 'crying', 'cathartic', 'comforting'],
     target: { energy: 0.4, valence: 0.25, danceability: 0.35, acousticness: 0.5 },
     opposite: 'Relaxed',
-    lift: 'Some stress',
+    lift: 'Meh',
     feel: 'honest and comforting',
     mix: 'Comfort',
     ask: 'comforting, tender',
@@ -67,7 +67,7 @@ export const MOOD_TAGS = Object.fromEntries(Object.entries(STATES).map(([name, s
 export const DIMS = ['energy', 'valence', 'danceability', 'acousticness', 'instrumentalness']
 export const targets = Object.fromEntries(Object.entries(STATES).map(([name, s]) => [name, s.target]))
 
-const LEGACY = { Hype: 'Stressed', Sad: 'Very stressed', Focus: 'Some stress', Happy: 'Relaxed' }
+const LEGACY = { Hype: 'Stressed', Sad: 'Very stressed', Focus: 'Meh', 'Some stress': 'Meh', Happy: 'Relaxed' }
 export const canonMood = (mood) => (mood in STATES ? mood : (LEGACY[mood] ?? null))
 export const stateOf = (mood) => STATES[canonMood(mood)]
 export const targetOf = (mood) => stateOf(mood)?.target
