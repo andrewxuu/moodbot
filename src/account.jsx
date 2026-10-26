@@ -92,7 +92,10 @@ export function AccountProvider({ children }) {
   }, [session])
 
   const continueAsGuest = useCallback(() => {
+    removeKey(DONE_KEY)
+    removeKey(STEP_KEY)
     writeKey(GUEST_KEY, '1')
+    setOnboarded(false)
     setGuest(true)
   }, [])
 
