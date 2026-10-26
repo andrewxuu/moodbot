@@ -16,3 +16,19 @@ export default function ChatMessage({ from = 'bot', width = 480, fill, children 
     </div>
   )
 }
+
+export function TypingDots({ label = 'Muse is thinking' }) {
+  return (
+    <div role="status" className="flex h-6 items-center gap-1.5 text-teal">
+      <span className="sr-only">{label}</span>
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          aria-hidden="true"
+          style={{ animationDelay: `${i * 0.15}s` }}
+          className="typing-dot size-2 rounded-full bg-current"
+        />
+      ))}
+    </div>
+  )
+}
