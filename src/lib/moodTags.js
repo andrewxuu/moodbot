@@ -23,7 +23,7 @@ export const STATES = {
     opposite: 'Very stressed',
     lift: 'Calm',
     feel: 'easy and warm',
-    mix: 'Easy',
+    mix: 'Feel good',
     ask: 'easy feel-good',
   },
   Meh: {
@@ -34,7 +34,7 @@ export const STATES = {
     opposite: 'Stressed',
     lift: 'Relaxed',
     feel: 'steady and focused',
-    mix: 'Settle',
+    mix: 'Focus',
     ask: 'steady, focused',
   },
   Stressed: {
