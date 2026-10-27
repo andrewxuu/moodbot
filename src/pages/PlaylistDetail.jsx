@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { ArrowLeft, Clock, ExternalLink, Heart, Play, Plus, Search, Shuffle } from 'lucide-react'
+import { ArrowDownUp, ArrowLeft, Clock, ExternalLink, Heart, Play, Plus, Search, Shuffle } from 'lucide-react'
 import PlaylistSongRow, { PLAYLIST_COLUMNS } from '../components/songs/PlaylistSongRow'
-import SegmentedSwitch from '../components/ui/SegmentedSwitch'
 import SourceFilter from '../components/songs/SourceFilter'
 import { getPlaylistSongs, NotOwnedError, replaceTracks } from '../spotify/api'
 import { useSpotify } from '../spotify/useSpotify'
@@ -305,9 +304,12 @@ export default function PlaylistDetail({ playlist, songs: fixedSongs, onBack, is
               options={[FROM_CHAT, FROM_SPOTIFY].map((id) => ({ id, count: state.songs.filter((s) => (s.source === 'chat') === (id === FROM_CHAT)).length }))}
             />
           ) : mood ? (
-            <div className="max-w-full overflow-x-auto">
-              <SegmentedSwitch options={[ORIGINAL, MODES.match, MODES.lift]} value={view} onChange={changeView} size="sm" />
-            </div>
+            <SourceFilter
+              icon={ArrowDownUp}
+              value={view}
+              onChange={changeView}
+              options={[ORIGINAL, MODES.match, MODES.lift].map((id) => ({ id }))}
+            />
           ) : (
             <p className="text-[13px] text-muted">Rate your stress on Home to sort this playlist by mood.</p>
           )}

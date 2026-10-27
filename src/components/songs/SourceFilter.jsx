@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Check, ChevronDown, Funnel } from 'lucide-react'
 
-export default function SourceFilter({ options, value, onChange }) {
+export default function SourceFilter({ options, value, onChange, icon: Icon = Funnel }) {
   const [open, setOpen] = useState(false)
   const wrap = useRef(null)
 
@@ -31,7 +31,7 @@ export default function SourceFilter({ options, value, onChange }) {
         onClick={() => setOpen((o) => !o)}
         className="flex h-12 items-center gap-1.5 rounded-[14px] border border-teal bg-teal-soft px-3.5 text-sm font-semibold text-teal"
       >
-        <Funnel size={15} aria-hidden="true" />
+        <Icon size={15} aria-hidden="true" />
         {value}
         <ChevronDown size={15} aria-hidden="true" className={`transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
@@ -49,10 +49,10 @@ export default function SourceFilter({ options, value, onChange }) {
                 onClick={() => pick(o.id)}
                 className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm ${
                   selected ? 'bg-teal-soft font-semibold' : 'hover:bg-cream'
-                } ${o.count ? 'text-ink' : 'text-hint'}`}
+                } ${o.count === 0 ? 'text-hint' : 'text-ink'}`}
               >
                 <span className="flex-1">{o.id}</span>
-                <span className="tabular-nums text-muted">{o.count}</span>
+                {o.count !== undefined && <span className="tabular-nums text-muted">{o.count}</span>}
                 <Check size={15} aria-hidden="true" className={selected ? 'text-teal' : 'invisible'} />
               </button>
             )
