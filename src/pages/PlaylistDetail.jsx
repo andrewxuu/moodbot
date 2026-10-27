@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { ArrowDownUp, ArrowLeft, Clock, ExternalLink, Heart, Play, Plus, Search, Shuffle } from 'lucide-react'
+import { ArrowDownUp, ArrowLeft, ArrowRightLeft, Clock, ExternalLink, Heart, Play, Plus, Search, Shuffle } from 'lucide-react'
 import PlaylistSongRow, { PLAYLIST_COLUMNS } from '../components/songs/PlaylistSongRow'
 import SourceFilter from '../components/songs/SourceFilter'
 import { getPlaylistSongs, NotOwnedError, replaceTracks } from '../spotify/api'
@@ -8,13 +8,14 @@ import { usePlayer } from '../spotify/usePlayer'
 import { matchesSearch } from '../lib/search'
 import { playlistCache } from '../lib/playlistCache'
 import { MODES, averageOf, distance, stateFor, targetFor } from '../lib/moodTags'
-import { placeSongs } from '../lib/playlistMood'
+import { applySwap, placeSongs, planSwap } from '../lib/playlistMood'
 import { fillGenres, topGenres } from '../lib/genreMatch'
 import { discoverSongs } from '../picks'
 import { isLastfmConfigured } from '../services/lastfm'
 import { getAudioFeatures } from '../services/reccobeats'
 import { stressValue, useRatings } from '../ratings'
 import ConfirmRemove from '../components/playlists/ConfirmRemove'
+import SwapPreview from '../components/playlists/SwapPreview'
 
 const cache = playlistCache
 const ORIGINAL = 'Original'
@@ -49,7 +50,7 @@ const totalLength = (songs) => {
 }
 
 export default function PlaylistDetail({ playlist, songs: fixedSongs, onBack, isSaved, onSave }) {
-  const { profile, listening, removeSong, addSongs } = useSpotify()
+  const { profile, listening, liked, removeSong, addSongs } = useSpotify()
   const { ratings } = useRatings()
   const { play } = usePlayer()
   const notMine = profile?.id && playlist.ownerId && playlist.ownerId !== profile.id && !playlist.collaborative
@@ -64,6 +65,8 @@ export default function PlaylistDetail({ playlist, songs: fixedSongs, onBack, is
   const [source, setSource] = useState(FROM_SPOTIFY)
   const [sync, setSync] = useState(null)
   const [extend, setExtend] = useState(null)
+  const [swap, setSwap] = useState(null)
+  const [lastSwap, setLastSwap] = useState(null)
   const originalOrder = useRef(null)
   const [features, setFeatures] = useState({})
   const canRemove = !fixed && !(profile?.id && playlist.ownerId && playlist.ownerId !== profile.id)
@@ -112,6 +115,7 @@ export default function PlaylistDetail({ playlist, songs: fixedSongs, onBack, is
   const changeView = async (next) => {
     if (sync === 'saving') return
     setView(next)
+    setLastSwap(null)
     if (!canSync || !mood) return
 
     let order
@@ -137,6 +141,7 @@ export default function PlaylistDetail({ playlist, songs: fixedSongs, onBack, is
   const extendPlaylist = async () => {
     if (!isLastfmConfigured()) return setExtend({ status: 'done', text: 'Add a Last.fm key to find new songs.' })
     setExtend({ status: 'loading' })
+    setLastSwap(null)
     try {
       const existing = state.songs
       const known = await getAudioFeatures(existing.slice(0, EXISTING_FEATURES).map((s) => s.id))
@@ -184,6 +189,47 @@ export default function PlaylistDetail({ playlist, songs: fixedSongs, onBack, is
     }
   }
 
+  const startSwap = async () => {
+    if (swap?.status === 'planning') return
+    setSwap({ status: 'planning' })
+    try {
+      const plan = await planSwap({ songs: state.songs, mood, state: moodState, lifting, library: liked, listening })
+      setSwap(plan ? { status: 'ready', plan } : { status: 'none' })
+    } catch {
+      setSwap({ status: 'none' })
+    }
+  }
+
+  const applySwapPairs = async (pairs) => {
+    const plan = swap.plan
+    const base = applySwap(state.songs, pairs)
+    const found = { ...features, ...plan.features }
+    const order = sortByFit(base, found, plan.target)
+    await replaceTracks(playlist.id, order.map((s) => s.uri ?? `spotify:track:${s.id}`))
+    setLastSwap({ songs: state.songs, original: originalOrder.current })
+    originalOrder.current = applySwap(originalOrder.current ?? state.songs, pairs)
+    cache.set(playlist.id, order)
+    setFeatures(found)
+    setState({ status: 'ready', songs: order })
+    setSync('saved')
+    setSwap(null)
+  }
+
+  const undoSwap = async () => {
+    if (!lastSwap || sync === 'saving') return
+    setSync('saving')
+    try {
+      await replaceTracks(playlist.id, lastSwap.songs.map((s) => s.uri ?? `spotify:track:${s.id}`))
+      cache.set(playlist.id, lastSwap.songs)
+      originalOrder.current = lastSwap.original
+      setState({ status: 'ready', songs: lastSwap.songs })
+      setLastSwap(null)
+      setSync('saved')
+    } catch {
+      setSync('error')
+    }
+  }
+
   const isLiked = Boolean(playlist.liked)
   const listSongs = isLiked ? state.songs.filter((s) => (source === FROM_CHAT ? s.source === 'chat' : s.source !== 'chat')) : state.songs
   const ordered = adjusting ? sortByFit(state.songs, features, targetFor(mood, lifting, moodState)) : listSongs
@@ -192,6 +238,7 @@ export default function PlaylistDetail({ playlist, songs: fixedSongs, onBack, is
 
   const confirmRemove = async () => {
     await removeSong(playlist.id, removing, copies)
+    setLastSwap(null)
     const songs = state.songs.filter((s) => s.id !== removing.id)
     cache.set(playlist.id, songs)
     setState({ status: 'ready', songs })
@@ -313,6 +360,27 @@ export default function PlaylistDetail({ playlist, songs: fixedSongs, onBack, is
           ) : (
             <p className="text-[13px] text-muted">Rate your stress on Home to sort this playlist by mood.</p>
           )}
+          {adjusting && canSync && (
+            <button
+              type="button"
+              onClick={startSwap}
+              disabled={swap?.status === 'planning'}
+              className="inline-flex h-10 items-center gap-1.5 rounded-full border border-teal px-4 text-sm font-semibold text-teal disabled:opacity-50"
+            >
+              <ArrowRightLeft size={16} aria-hidden="true" />
+              {swap?.status === 'planning' ? 'Finding fits…' : 'Swap songs'}
+            </button>
+          )}
+          {swap?.status === 'none' && (
+            <p role="status" className="text-[13px] text-muted">
+              No better fits found right now.
+            </p>
+          )}
+          {lastSwap && sync === 'saved' && (
+            <button type="button" onClick={undoSwap} className="text-[13px] font-semibold text-teal underline">
+              Undo swap
+            </button>
+          )}
           {canExtend && (
             <button
               type="button"
@@ -352,6 +420,15 @@ export default function PlaylistDetail({ playlist, songs: fixedSongs, onBack, is
             {extend?.status === 'loading' ? 'Finding songs…' : 'Extend playlist'}
           </button>
         </div>
+      )}
+
+      {swap?.status === 'ready' && (
+        <SwapPreview
+          plan={swap.plan}
+          moodLabel={view === MODES.lift ? 'Ease my stress' : 'Match my mood'}
+          onApply={applySwapPairs}
+          onCancel={() => setSwap(null)}
+        />
       )}
 
       {removing && (
