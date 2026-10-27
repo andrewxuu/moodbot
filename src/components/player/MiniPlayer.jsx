@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { Pause, Play, SkipBack, SkipForward, X } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Pause, Play, SkipBack, SkipForward, Volume1, Volume2, VolumeX, X } from 'lucide-react'
 import { usePlayer } from '../../spotify/usePlayer'
 import { useSpotify } from '../../spotify/useSpotify'
 
@@ -46,6 +46,37 @@ function Control({ icon: Icon, label, onClick, disabled, className = '' }) {
   )
 }
 
+function Volume() {
+  const { volume, setVolume } = usePlayer()
+  const before = useRef(0.8)
+
+  const toggleMute = () => {
+    if (volume > 0) {
+      before.current = volume
+      setVolume(0)
+    } else {
+      setVolume(before.current || 0.8)
+    }
+  }
+
+  const Icon = volume === 0 ? VolumeX : volume < 0.5 ? Volume1 : Volume2
+  return (
+    <div className="hidden items-center gap-1 md:flex">
+      <Control icon={Icon} label={volume === 0 ? 'Unmute' : 'Mute'} onClick={toggleMute} />
+      <input
+        type="range"
+        min="0"
+        max="100"
+        step="1"
+        value={Math.round(volume * 100)}
+        onChange={(e) => setVolume(Number(e.target.value) / 100)}
+        aria-label="Volume"
+        className="h-1 w-24 cursor-pointer accent-teal"
+      />
+    </div>
+  )
+}
+
 export default function MiniPlayer() {
   const { current, playing, notice, toggle, next, prev, close, dismissNotice, hasPrev, hasNext } = usePlayer()
   const { connect } = useSpotify()
@@ -88,6 +119,7 @@ export default function MiniPlayer() {
           className="bg-teal !text-white"
         />
         <Control icon={SkipForward} label="Next song" onClick={next} disabled={!hasNext} />
+        <Volume />
         <Control icon={X} label="Close player" onClick={close} />
       </div>
     </section>
