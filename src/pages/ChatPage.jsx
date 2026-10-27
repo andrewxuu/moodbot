@@ -9,6 +9,7 @@ import SongRow from '../components/songs/SongRow'
 import SavedPanel from '../components/layout/SavedPanel'
 import { useSpotify } from '../spotify/useSpotify'
 import { detectMood, getPicks, pickSongs } from '../picks'
+import { requestPicks, topArtists } from '../lib/requestPicks'
 import { songs as sampleSongs } from '../data/data'
 import { moodKey, useFeedback } from '../feedback'
 import { chatDays, greetingText, loadChats, saveChat, todayKey } from '../data/sampleChats'
@@ -67,7 +68,7 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onOpenPlaylist, 
     endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
   }, [messages, viewDay, thinking])
 
-  const respond = async (mood, exclude = [], before = []) => {
+  const respond = async (mood, exclude = [], before = [], request = null) => {
     const id = nextId.current++
     if (noMusic && !isSample) {
       const text = 'Connect Spotify in settings so I can find songs for you.'
@@ -83,7 +84,21 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onOpenPlaylist, 
     const alreadyShown = [...(shown.current[key]?.values() ?? [])]
     const feedback = forMood(mood)
     const skip = [...exclude, ...alreadyShown.map((s) => s.id), ...feedback.disliked.map((s) => s.id)]
-    const picks = isSample
+    const asked =
+      request && !isSample
+        ? await requestPicks({
+            request,
+            mood,
+            state: stateIf(mood),
+            mode,
+            taste: topArtists(listening.filter((s) => s.top).concat(liked)),
+            avoid: [...alreadyShown, ...feedback.disliked],
+            skip: new Set(skip),
+          }).catch(() => [])
+        : []
+    const picks = asked.length
+      ? { songs: asked, reason: '' }
+      : isSample
       ? { ...pickSongs(sampleSongs, mood, mode, skip), reason: SAMPLE_REASON }
       : await getPicks({
           top: listening.filter((s) => s.top),
@@ -101,7 +116,7 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onOpenPlaylist, 
     shown.current[key] ??= new Map()
     picks.songs.forEach((s) => shown.current[key].set(s.id, s))
 
-    setMessages((m) => m.map((msg) => (msg.id === id ? { id, from: 'bot', mood, ...picks } : msg)))
+    setMessages((m) => m.map((msg) => (msg.id === id ? { id, from: 'bot', mood, request: asked.length ? request : null, ...picks } : msg)))
   }
 
   const applyStress = (level) => {
@@ -195,16 +210,20 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onOpenPlaylist, 
 
     setThinking(true)
     const llm = await askMuse([...messages, userMsg]).finally(() => setThinking(false))
-    if (!llm) return respond(detectMood(clean))
+    if (!llm) {
+      const known = detectMood(clean) || [...messages].reverse().find((m) => m.mood)?.mood || state?.mood
+      if (!known) return botSay('How are you feeling right now, or what are you in the mood for? Tell me or pick a mood below.')
+      return respond(known, [], [], clean)
+    }
 
     const replyMsg = { id: nextId.current++, from: 'bot', text: llm.reply }
     const noteMsg = applyStress(llm.stress)
     const lead = noteMsg ? [replyMsg, noteMsg] : [replyMsg]
     if (!llm.song_queries.length) return setMessages((m) => [...m, ...lead])
-    respond(detectMood(llm.mood) || detectMood(clean), [], lead)
+    respond(detectMood(llm.mood) || detectMood(clean), [], lead, clean)
   }
 
-  const moreLikeThis = (msg) => respond(msg.mood, msg.songs.map((s) => s.id))
+  const moreLikeThis = (msg) => respond(msg.mood, msg.songs.map((s) => s.id), [], msg.request)
 
   const saveFromChat = (msg, song) => {
     if (!isSaved(song.id)) rate(msg.mood, song, 'up')
@@ -215,6 +234,7 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onOpenPlaylist, 
 
   const intro = (msg) => {
     const kind = canonMood(msg.mood) ? ` for feeling ${canonMood(msg.mood).toLowerCase()}` : ''
+    if (msg.request) return `Matched to what you asked${kind}:`
     const basis = isSample ? 'your mood' : msg.mood ? 'your mood and your Spotify listening' : 'your Spotify listening'
     return `Here are some picks${kind} based on ${basis}:`
   }
