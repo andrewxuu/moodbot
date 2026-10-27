@@ -278,3 +278,65 @@ export async function buildMoodSongs({ mood, state, mode = MODES.match, saved, l
   writeRecent(result)
   return result
 }
+
+const SWAP_SHARE = 0.25
+const SWAP_MAX = 15
+const SWAP_LIKED = 150
+
+export async function planSwap({ songs, mood, state, lifting, library, listening }) {
+  const target = targetFor(mood, lifting, state)
+  const features = await getAudioFeatures(songs.slice(0, 200).map((s) => s.id))
+  const scored = songs.map((song) => ({ song, d: distance(features[song.id], target) })).filter((x) => Number.isFinite(x.d))
+  const count = Math.min(SWAP_MAX, Math.max(1, Math.round(songs.length * SWAP_SHARE)))
+  const leaving = [...scored].sort((a, b) => b.d - a.d).slice(0, count)
+  if (!leaving.length) return null
+
+  const ids = songs.map((s) => s.id)
+  const have = new Set(ids)
+  const prefs = loadGenrePrefs()
+  const stayIn = await anchorGenres(listening, library, prefs).catch(() => [])
+
+  const fresh = await discoverSongs({ top: listening.filter((s) => s.top), library, pool: listening, mood, state, lifting, stayIn, count: count + 5, exclude: ids }).catch(() => [])
+  const freshIds = new Set(fresh.map((s) => s.id))
+
+  let pool = unique([...fresh, ...library.filter((s) => s.id && !have.has(s.id)).slice(0, SWAP_LIKED)]).filter((s) => !have.has(s.id))
+  try {
+    pool = (await applyGenrePrefs(pool, prefs)).songs
+  } catch {
+    pool = unique(pool)
+  }
+
+  const poolFeatures = await getAudioFeatures(pool.map((s) => s.id)).catch(() => ({}))
+  const coming = pool
+    .map((song) => ({ song, d: distance(poolFeatures[song.id], target) }))
+    .filter((x) => Number.isFinite(x.d))
+    .sort((a, b) => a.d - b.d)
+
+  const pairs = []
+  leaving.forEach((out, i) => {
+    const inn = coming[i]
+    if (!inn || inn.d >= out.d) return
+    pairs.push({
+      id: out.song.id,
+      out: { song: out.song, d: out.d },
+      inn: { song: { ...inn.song, isNew: freshIds.has(inn.song.id) }, d: inn.d, tag: freshIds.has(inn.song.id) ? 'new' : 'liked' },
+    })
+  })
+  if (!pairs.length) return null
+
+  return { pairs, scored, target, features: { ...features, ...poolFeatures } }
+}
+
+export function swapFit(plan, chosen) {
+  const swapped = new Map(plan.pairs.filter((p) => chosen.has(p.id)).map((p) => [p.id, p.inn.d]))
+  const avg = (list) => (list.length ? Math.round(list.reduce((sum, d) => sum + matchPercent(d), 0) / list.length) : 0)
+  return {
+    before: avg(plan.scored.map((x) => x.d)),
+    after: avg(plan.scored.map((x) => swapped.get(x.song.id) ?? x.d)),
+  }
+}
+
+export function applySwap(songs, pairs) {
+  const replace = new Map(pairs.map((p) => [p.out.song.id, p.inn.song]))
+  return songs.map((s) => replace.get(s.id) ?? s)
+}
