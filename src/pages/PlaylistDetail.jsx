@@ -8,7 +8,7 @@ import { usePlayer } from '../spotify/usePlayer'
 import { matchesSearch } from '../lib/search'
 import { playlistCache } from '../lib/playlistCache'
 import { MODES, averageOf, distance, stateFor, targetFor } from '../lib/moodTags'
-import { applySwap, placeSongs, planSwap } from '../lib/playlistMood'
+import { applySwap, isGoodMatch, placeSongs, planSwap } from '../lib/playlistMood'
 import { fillGenres, topGenres } from '../lib/genreMatch'
 import { discoverSongs } from '../picks'
 import { isLastfmConfigured } from '../services/lastfm'
@@ -116,6 +116,7 @@ export default function PlaylistDetail({ playlist, songs: fixedSongs, onBack, is
     if (sync === 'saving') return
     setView(next)
     setLastSwap(null)
+    setSwap(null)
     if (!canSync || !mood) return
 
     let order
@@ -188,6 +189,13 @@ export default function PlaylistDetail({ playlist, songs: fixedSongs, onBack, is
       setExtend({ status: 'done', text: 'Couldn’t extend the playlist. Try again.' })
     }
   }
+
+  const poorFits = adjusting
+    ? state.songs.filter((s) => {
+        const d = distance(features[s.id], targetFor(mood, lifting, moodState))
+        return Number.isFinite(d) && !isGoodMatch(d)
+      }).length
+    : 0
 
   const startSwap = async () => {
     if (swap?.status === 'planning') return
@@ -360,27 +368,6 @@ export default function PlaylistDetail({ playlist, songs: fixedSongs, onBack, is
           ) : (
             <p className="text-[13px] text-muted">Rate your stress on Home to sort this playlist by mood.</p>
           )}
-          {adjusting && canSync && (
-            <button
-              type="button"
-              onClick={startSwap}
-              disabled={swap?.status === 'planning'}
-              className="inline-flex h-10 items-center gap-1.5 rounded-full border border-teal px-4 text-sm font-semibold text-teal disabled:opacity-50"
-            >
-              <ArrowRightLeft size={16} aria-hidden="true" />
-              {swap?.status === 'planning' ? 'Finding fits…' : 'Swap songs'}
-            </button>
-          )}
-          {swap?.status === 'none' && (
-            <p role="status" className="text-[13px] text-muted">
-              No better fits found right now.
-            </p>
-          )}
-          {lastSwap && sync === 'saved' && (
-            <button type="button" onClick={undoSwap} className="text-[13px] font-semibold text-teal underline">
-              Undo swap
-            </button>
-          )}
           {canExtend && (
             <button
               type="button"
@@ -402,6 +389,36 @@ export default function PlaylistDetail({ playlist, songs: fixedSongs, onBack, is
               {SYNC_TEXT[sync]}
             </p>
           )}
+        </div>
+      )}
+
+      {adjusting && canSync && (poorFits > 0 || lastSwap || swap?.status === 'none') && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[14px] bg-teal-soft px-4 py-3">
+          <p role="status" className="text-[15px] text-teal">
+            {swap?.status === 'none'
+              ? 'No better fits found right now.'
+              : lastSwap && sync === 'saved'
+                ? 'Songs swapped on Spotify.'
+                : `${poorFits} ${poorFits === 1 ? 'song fits' : 'songs fit'} poorly right now`}
+          </p>
+          <div className="flex items-center gap-3">
+            {lastSwap && sync === 'saved' && (
+              <button type="button" onClick={undoSwap} className="text-sm font-semibold text-teal underline">
+                Undo swap
+              </button>
+            )}
+            {poorFits > 0 && (
+              <button
+                type="button"
+                onClick={startSwap}
+                disabled={swap?.status === 'planning'}
+                className="inline-flex h-9 items-center gap-1.5 rounded-full border border-teal bg-surface px-4 text-sm font-semibold text-teal disabled:opacity-50"
+              >
+                <ArrowRightLeft size={16} aria-hidden="true" />
+                {swap?.status === 'planning' ? 'Finding fits…' : 'Swap songs'}
+              </button>
+            )}
+          </div>
         </div>
       )}
 
