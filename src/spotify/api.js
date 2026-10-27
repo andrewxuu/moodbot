@@ -6,7 +6,8 @@ const BASE = 'https://api.spotify.com/v1'
 const MAX_ACTIVE = 3
 const SHORT_WAIT = 5
 const DEFAULT_COOLDOWN = 30
-const MAX_COOLDOWN = 3600
+const QUOTA_COOLDOWN = 900
+const MAX_COOLDOWN = 86400
 const COOLDOWN_KEY = 'moodbot:spotify-cooldown'
 const CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID
 
@@ -35,7 +36,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 function readCooldown() {
   try {
     const saved = JSON.parse(localStorage.getItem(COOLDOWN_KEY))
-    return saved?.clientId === CLIENT_ID ? saved : null
+    return saved && saved.clientId === CLIENT_ID ? saved : null
   } catch {
     return null
   }
@@ -61,7 +62,7 @@ function waitText(ms) {
 function busyError(ms, quota = Boolean(readCooldown()?.quota)) {
   const error = new Error(
     quota
-      ? `Spotify’s usage limit for this app was reached. Try again in about ${waitText(ms)}.`
+      ? `Spotify’s usage limit for your developer account was reached. It can take hours to reset. Try again in about ${waitText(ms)}.`
       : `Spotify asked Muse to slow down. Try again in about ${waitText(ms)}.`
   )
   error.status = 429
@@ -105,7 +106,7 @@ async function execute(url, method, body, attempt = 0) {
       await sleep(header * 1000)
       return execute(url, method, body, attempt + 1)
     }
-    const seconds = Math.min(MAX_COOLDOWN, header || DEFAULT_COOLDOWN)
+    const seconds = Math.min(MAX_COOLDOWN, header || (quota ? QUOTA_COOLDOWN : DEFAULT_COOLDOWN))
     startCooldown(seconds, quota)
     throw busyError(seconds * 1000, quota)
   }
@@ -295,31 +296,62 @@ export async function getListening() {
 
 export async function getArtistGenres(ids) {
   const out = {}
-  for (let i = 0; i < ids.length; i += 50) {
-    const data = await request(`/artists?ids=${ids.slice(i, i + 50).join(',')}`)
+  const unique = [...new Set(ids)]
+  for (let i = 0; i < unique.length; i += 50) {
+    const data = await request(`/artists?ids=${unique.slice(i, i + 50).join(',')}`)
     ;(data.artists ?? []).forEach((a) => a && (out[a.id] = a.genres ?? []))
   }
   return out
 }
 
-export async function getTracks(ids) {
-  const results = await Promise.allSettled(ids.map((id) => request(`/tracks/${id}`)))
-  return Object.fromEntries(
-    results.flatMap((r, i) => (r.status === 'fulfilled' && r.value ? [[ids[i], toSong(r.value, 'spotify')]] : []))
-  )
+const SEARCH_KEY = 'moodbot:spotify-search'
+const SEARCH_MS = 7 * 24 * 60 * 60 * 1000
+const SEARCH_MAX = 400
+const searchCache = new Map()
+let searchSaved = null
+
+function loadSearches() {
+  if (searchSaved) return searchSaved
+  try {
+    const raw = JSON.parse(localStorage.getItem(SEARCH_KEY) ?? '{}')
+    const now = Date.now()
+    searchSaved = Object.fromEntries(Object.entries(raw).filter(([, v]) => now - v.at < SEARCH_MS))
+  } catch {
+    searchSaved = {}
+  }
+  return searchSaved
 }
 
-const searchCache = new Map()
+function saveSearch(key, song) {
+  const saved = loadSearches()
+  saved[key] = { at: Date.now(), song }
+  const keys = Object.keys(saved)
+  if (keys.length > SEARCH_MAX) {
+    keys.sort((a, b) => saved[a].at - saved[b].at).slice(0, keys.length - SEARCH_MAX).forEach((k) => delete saved[k])
+  }
+  try {
+    localStorage.setItem(SEARCH_KEY, JSON.stringify(saved))
+  } catch {
+    searchSaved = {}
+  }
+}
 
 export function searchTrack(title, artist) {
   const key = `${normalize(artist)}|${normalize(title)}`
+  const hit = loadSearches()[key]
+  if (hit) return Promise.resolve(hit.song)
   if (!searchCache.has(key)) {
     searchCache.set(
       key,
-      searchTrackRequest(title, artist).catch((err) => {
-        searchCache.delete(key)
-        throw err
-      })
+      searchTrackRequest(title, artist)
+        .then((song) => {
+          saveSearch(key, song)
+          return song
+        })
+        .catch((err) => {
+          searchCache.delete(key)
+          throw err
+        })
     )
   }
   return searchCache.get(key)
