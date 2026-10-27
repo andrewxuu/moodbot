@@ -23,7 +23,7 @@ import StressFace from '../components/ui/StressFace'
 import { ratingMood, stressLabel, stressValue, useRatings } from '../ratings'
 
 const SAMPLE_REASON = 'Sample picks. Connect Spotify to get picks from your own listening.'
-const wait = () => new Promise((resolve) => setTimeout(resolve, 1200 + Math.random() * 800))
+const wait = () => new Promise((resolve) => setTimeout(resolve, 600 + Math.random() * 400))
 
 const greeting = { id: 0, from: 'bot', text: greetingText }
 const SPOTIFY_REASON = 'Picked from your recent Spotify listening.'
