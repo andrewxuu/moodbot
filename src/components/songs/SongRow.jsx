@@ -52,6 +52,7 @@ export default function SongRow({ song, queue, saved, onSave, showHeart = true, 
           )}
         </div>
         <p className="mt-0.5 truncate text-[13px] text-muted">{disliked && downNote ? downNote : song.artist}</p>
+        {song.note && !disliked && <p className="mt-0.5 text-[13px] text-teal">{song.note}</p>}
       </div>
       </div>
       {onRate && <SongThumbs song={song} rating={rating} onRate={onRate} />}
