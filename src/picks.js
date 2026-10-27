@@ -408,7 +408,9 @@ export async function discoverSongs({ top, library, pool, mood, state, lifting =
   const knownIds = new Set(known.map((s) => s.id))
   const profile = libraryProfile(everything)
 
-  const artists = focus ? favoriteArtists([], [], focus, MIX.artists) : favoriteArtists(top, pool, library, MIX.artists)
+  const artists = focus
+    ? favoriteArtists([], [], focus, MIX.artists)
+    : shuffle(favoriteArtists(top, pool, library, MIX.artists * 2)).slice(0, MIX.artists)
   if (trace) trace.artists = artists.length
   if (!artists.length) return []
   const own = new Set(artists.map((a) => a.toLowerCase()))

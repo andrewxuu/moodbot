@@ -1,7 +1,7 @@
 import { getAudioFeatures } from '../services/reccobeats'
 import { getPlaylistSongs } from '../spotify/api'
 import { playlistCache } from './playlistCache'
-import { FILTERS, firstArtist } from './filters'
+import { FILTERS, firstArtist, shuffle } from './filters'
 import { MODES, averageOf, distance, effectiveMood, stateFor, stateOf, targetFor, targetOf } from './moodTags'
 import { llmSongs } from '../services/llmSongs'
 import { discoverSongs } from '../picks'
@@ -203,7 +203,27 @@ async function anchorGenres(listening, library, prefs) {
   const sample = await fillGenres([...listening.filter((s) => s.top).slice(0, 40), ...listening.slice(0, 40), ...library.slice(0, 80)])
   const ranked = topGenres(sample, 8)
   const preferred = ranked.filter((g) => prefs.liked.includes(g))
-  return (preferred.length ? preferred : ranked).slice(0, MIX_GENRES)
+  return shuffle(preferred.length ? preferred : ranked).slice(0, MIX_GENRES)
+}
+
+const RECENT_KEY = 'moodbot:recent-mix'
+const RECENT_MAX = 120
+
+function readRecent() {
+  try {
+    return JSON.parse(localStorage.getItem(RECENT_KEY)) ?? []
+  } catch {
+    return []
+  }
+}
+
+function writeRecent(songs) {
+  try {
+    const ids = [...songs.map((s) => s.id), ...readRecent()].filter(Boolean)
+    localStorage.setItem(RECENT_KEY, JSON.stringify([...new Set(ids)].slice(0, RECENT_MAX)))
+  } catch {
+    return
+  }
 }
 
 export async function buildMoodSongs({ mood, state, mode = MODES.match, saved, listening }) {
@@ -212,11 +232,12 @@ export async function buildMoodSongs({ mood, state, mode = MODES.match, saved, l
   const library = saved.filter((s) => s.id)
   const prefs = loadGenrePrefs()
   const stayIn = await anchorGenres(listening, library, prefs).catch(() => [])
+  const recent = readRecent()
   let songs = []
 
   try {
     songs = unique(
-      await discoverSongs({ top: listening.filter((s) => s.top), library, pool: listening, mood, state, lifting, stayIn, count: NEW_MAX })
+      await discoverSongs({ top: listening.filter((s) => s.top), library, pool: listening, mood, state, lifting, stayIn, count: NEW_MAX, exclude: recent })
     )
   } catch {
     songs = []
@@ -224,7 +245,7 @@ export async function buildMoodSongs({ mood, state, mode = MODES.match, saved, l
 
   const fill = async (candidates, genres) => {
     try {
-      const have = new Set(songs.map((s) => s.id))
+      const have = new Set([...songs.map((s) => s.id), ...recent])
       const { songs: allowed, liked } = await applyGenrePrefs(candidates.filter((s) => !have.has(s.id)), prefs)
       const inStyle = genres.length ? (await fillGenres(allowed)).filter((s) => inGenres(s, genres)) : allowed
       const near = boostLiked(await closestSongs(inStyle, target, NEW_MAX + 10), (s) => liked.has(s.id))
@@ -253,5 +274,7 @@ export async function buildMoodSongs({ mood, state, mode = MODES.match, saved, l
     if (songs.length < MIN_COHESIVE) await fill(listening.filter((s) => s.id), [])
   }
 
-  return djOrder(songs.slice(0, NEW_MAX), target, lifting)
+  const result = await djOrder(songs.slice(0, NEW_MAX), target, lifting)
+  writeRecent(result)
+  return result
 }
