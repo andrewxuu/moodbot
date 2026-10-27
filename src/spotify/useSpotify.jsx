@@ -8,7 +8,7 @@ const empty = { profile: null, liked: [], playlists: [], listening: [] }
 
 const CACHE_KEY = 'moodbot:spotify-cache'
 const CACHE_MS = 30 * 60 * 1000
-const FIRST_LIKED = 200
+const FIRST_LIKED = 100
 
 const readCache = (stale = false) => {
   try {
@@ -42,27 +42,14 @@ export function SpotifyProvider({ children }) {
   const inFlight = useRef(false)
   const meta = useRef({ at: 0, full: false })
 
-  const loadAllLiked = useCallback((offset = FIRST_LIKED) => {
-    getLikedSongs(Infinity, offset)
-      .then((rest) => {
-        meta.current.full = true
-        setData((prev) => {
-          const have = new Set(prev.liked.map((s) => s.id))
-          return { ...prev, liked: [...prev.liked, ...rest.filter((s) => !have.has(s.id))] }
-        })
-      })
-      .catch(() => {})
-  }, [])
-
   const applyCache = useCallback(
     (cached) => {
       meta.current = { at: cached.at, full: cached.full }
       setData(cached.data)
       setError(null)
       setStatus('connected')
-      if (!cached.full) loadAllLiked(cached.data.liked.length)
     },
-    [loadAllLiked]
+    []
   )
 
   const load = useCallback(
@@ -105,7 +92,6 @@ export function SpotifyProvider({ children }) {
         if (failed) setError(failed.reason.message)
         else meta.current = { at: Date.now(), full: liked.value.length < FIRST_LIKED }
         setData((prev) => ({ ...prev, ...parts }))
-        if (liked.status === 'fulfilled' && liked.value.length >= FIRST_LIKED) loadAllLiked()
       } catch (err) {
         setError(err.message)
         setStatus(err instanceof ReconnectError ? 'expired' : 'error')
@@ -113,7 +99,7 @@ export function SpotifyProvider({ children }) {
         inFlight.current = false
       }
     },
-    [loadAllLiked, applyCache]
+    [applyCache]
   )
 
   const sync = useCallback(() => load(true), [load])
