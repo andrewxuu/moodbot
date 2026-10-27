@@ -37,6 +37,7 @@ export default function PlaylistPick({ state, savedSongs, onOpen }) {
       if (!picks.length) throw new Error('Couldn’t find enough songs yet. Try again.')
       const playlist = await createPlaylist(mixName(mood))
       await addSongs(playlist.id, picks)
+      playlistCache.set(playlist.id, picks)
       onOpen(playlist.id)
     } catch (err) {
       setError(err)

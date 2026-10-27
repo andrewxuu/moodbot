@@ -16,6 +16,7 @@ import { askMuse } from '../services/chatLLM'
 import { checkInFor } from '../data/sampleMoods'
 import { sampleDataOn } from '../lib/devMode'
 import { buildMoodSongs, isGoodMatch, matchPercent, profilePlaylists, rankProfiles } from '../lib/playlistMood'
+import { playlistCache } from '../lib/playlistCache'
 import { MODES, canonMood, mixName, stateFor, targetFor } from '../lib/moodTags'
 import StressFace from '../components/ui/StressFace'
 import { ratingMood, stressLabel, stressValue, useRatings } from '../ratings'
@@ -136,6 +137,7 @@ export default function ChatPage({ savedSongs, isSaved, onSave, onOpenPlaylist, 
       if (!songs.length) throw new Error('I couldn’t find enough songs yet. Try again in a bit.')
       const playlist = await createPlaylist(mixName(mood))
       await addSongs(playlist.id, songs)
+      playlistCache.set(playlist.id, songs)
       finish({
         text: `Done. Your ${mixName(mood)} is ready.`,
         playlist: { id: playlist.id, name: playlist.name, image: playlist.image ?? null, count: songs.length },
