@@ -55,8 +55,7 @@ async function recommend(
   const known = (Array.isArray(artists) ? artists : []).slice(0, 10).map((a) => String(a).slice(0, 60)).join(', ')
   const prompt = `A user asked a music app for songs. Their message: "${String(request).slice(0, 300)}". Their mood: ${String(mood || 'unknown').slice(0, 20)}.
 Pick ${n} real songs that match what they asked for, whether that is an artist, genre, vibe, or activity. If they named an artist, include at most one song by that artist and the rest by similar artists. Match the energy of their mood. Artists they already like: ${known || 'unknown'}. Do not repeat these: ${skip || 'none'}.
-Give each song a reason of one short plain sentence under 90 characters. No em dashes.
-Reply with only JSON: {"songs":[{"title":"","artist":"","reason":""}]}`
+Reply with only JSON: {"songs":[{"title":"","artist":""}]}`
 
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
     method: 'POST',
@@ -77,11 +76,7 @@ Reply with only JSON: {"songs":[{"title":"","artist":"","reason":""}]}`
     const parsed = JSON.parse(text.slice(text.indexOf('{'), text.lastIndexOf('}') + 1))
     const list = (Array.isArray(parsed.songs) ? parsed.songs : []).filter((s: { title?: string; artist?: string }) => s?.title && s?.artist)
     return json({
-      songs: list.map((s: { title: string; artist: string; reason?: string }) => ({
-        title: String(s.title),
-        artist: String(s.artist),
-        reason: String(s.reason ?? '').slice(0, 120),
-      })),
+      songs: list.map((s: { title: string; artist: string }) => ({ title: String(s.title), artist: String(s.artist) })),
     })
   } catch {
     console.error('gemini recommend unparseable', text.slice(0, 200))

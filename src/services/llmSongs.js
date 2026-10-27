@@ -22,5 +22,5 @@ export async function recommendSongs({ request, mood, artists, avoid = [], count
   if (error || !Array.isArray(data?.songs)) return []
 
   const results = await Promise.allSettled(data.songs.map((s) => searchTrack(s.title, s.artist)))
-  return results.flatMap((r, i) => (r.status === 'fulfilled' && r.value ? [{ ...r.value, note: data.songs[i].reason || undefined }] : []))
+  return results.flatMap((r) => (r.status === 'fulfilled' && r.value ? [r.value] : []))
 }
